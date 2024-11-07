@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF IMPRESISTEM S.A.S</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.15.349/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.9.0/pptxgen.min.js"></script>
+</head>
+
+<body class="flex flex-col h-screen">
+    <header class="bg-white py-4 shadow-md">
+        <div class="container px-5 flex items-center justify-between">
+            <div class="flex items-center">
+                <img src="logo2.jpg" alt="Logotipo de Impresistem" class="h-12 mr-4">
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <section class="py-20">
+            <div class="container px-4 mx-auto">
+                <!-- Encabezado -->
+                <div class="text-center mb-16">
+                    <h1
+                        class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
+                        Herramienta de Gestión de Documentos PDF
+                    </h1>
+                    <p class="text-gray-600 text-xl max-w-2xl mx-auto">
+                        Unir, separar y convertir PDFs de manera rápida y profesional
+                    </p>
+                </div>
+
+                <!-- Grid de herramientas -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                    <!-- Unir PDFs -->
+                    <div
+                        class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Unir PDFs</h2>
+                            <p class="text-gray-600 mb-6">Combina múltiples archivos PDF en un solo documento de manera
+                                sencilla</p>
+
+                            <div class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-all duration-300 cursor-pointer"
+                                    id="unirPdfArea">
+                                    <input type="file" id="pdfFiles" class="hidden" multiple
+                                        accept="application/pdf">
+                                    <label for="pdfFiles" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Arrastra archivos aquí o <span
+                                                class="text-blue-500">selecciona archivos</span></p>
+                                    </label>
+                                    <div id="unirFileDisplayArea" class="mt-4 hidden">
+                                        <div id="unirFileName"></div>
+                                        <button id="unirRemoveFileBtn" class="text-red-500 text-lg font-semibold mt-2">❌
+                                            Eliminar archivo</button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 transform hover:scale-[1.02]"
+                                    id="unirPdfBtn">
+                                    Unir PDFs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Separar PDF -->
+                    <div
+                        class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M15 7h3m-3 3h2m-2 3h1">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Separar PDF</h2>
+                            <p class="text-gray-600 mb-6">Divide tu PDF en múltiples archivos independientes</p>
+
+                            <div class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-purple-400 transition-all duration-300 cursor-pointer"
+                                    id="separarPdfArea">
+                                    <input type="file" id="singlePdf" class="hidden" accept="application/pdf">
+                                    <label for="singlePdf" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
+                                    </label>
+                                    <div id="separarFileDisplayArea" class="mt-4 hidden">
+                                        <div id="separarFileName"></div>
+                                        <button id="separarRemoveFileBtn"
+                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                                    </div>
+                                </div>
+
+
+                                <button
+                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 transform hover:scale-[1.02]"
+                                    id="separarPdfBtn">
+                                    Separar PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Convertir a PowerPoint -->
+
+                    <div
+                        class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Convertir a PowerPoint</h2>
+                            <p class="text-gray-600 mb-6">Transforma tu PDF en una presentación de PowerPoint</p>
+                            <div class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-orange-400 transition-all duration-300 cursor-pointer"
+                                    id="convertirPptArea">
+                                    <input type="file" id="pdfToPPT" class="hidden" accept="application/pdf">
+                                    <label for="pdfToPPT" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
+                                    </label>
+                                    <div id="convertirFileDisplayArea" class="mt-4 hidden">
+                                        <div id="convertirFileName"></div>
+                                        <button id="convertirRemoveFileBtn"
+                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                                    </div>
+                                </div>
+                                <button
+                                    class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105"
+                                    id="convertirPdfBtn">
+                                    Convertir a PowerPoint
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+
+    </main>
+
+    <footer class="bg-gray-900 py-6">
+        <div class="container px-5 flex justify-between items-center">
+            <div class="text-white text-sm">Copyright &copy; Impresistem S.A.S 2024</div>
+
+        </div>
+    </footer>
+
+    <script>
+        let selectedFilesUnir = [];
+        let selectedFileSeparar = null;
+        let selectedFileConvertir = null;
+
+        // Funciones generales de carga y eliminación de archivos
+        function updateFileDisplay(inputId, displayAreaId, fileNameId, removeBtnId, selectedFiles, isMultiple = false) {
+            const fileInput = document.getElementById(inputId);
+            const fileDisplayArea = document.getElementById(displayAreaId);
+            const fileNameDisplay = document.getElementById(fileNameId);
+            const removeFileBtn = document.getElementById(removeBtnId);
+
+            // Mostrar nombre del archivo
+            const file = isMultiple ? selectedFiles[0] : selectedFiles;
+            if (file) {
+                fileNameDisplay.textContent = `Archivo seleccionado: ${file.name}`;
+                fileDisplayArea.classList.remove('hidden');
+            }
+
+            // Eliminar archivo
+            removeFileBtn.addEventListener('click', function() {
+                selectedFiles = isMultiple ? [] : null;
+                fileInput.value = ''; // Limpiar input
+                fileDisplayArea.classList.add('hidden'); // Ocultar vista previa
+            });
+        }
+
+        document.getElementById('pdfToPPT').addEventListener('change', function(event) {
+            selectedFileConvertir = event.target.files[0]; // Obtener el archivo seleccionado
+            updateFileDisplay('pdfToPPT', 'convertirFileDisplayArea', 'convertirFileName', 'convertirRemoveFileBtn',
+                selectedFileConvertir);
+        });
+
+        document.getElementById('convertirPdfBtn').addEventListener('click', function() {
+            if (!selectedFileConvertir) {
+                alert('Por favor, selecciona un archivo PDF.');
+                return;
+            }
+            convertirPdfAPowerPoint(selectedFileConvertir);
+        });
+
+        // Función para descargar los archivos generados
+        function downloadFile(data, filename) {
+            const blob = new Blob([data], {
+                type: 'application/pdf'
+            });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        
+        // Unir PDFs
+        document.getElementById('pdfFiles').addEventListener('change', function(event) {
+            selectedFilesUnir = Array.from(event.target.files);
+            updateFileDisplay('pdfFiles', 'unirFileDisplayArea', 'unirFileName', 'unirRemoveFileBtn',
+                selectedFilesUnir, true);
+        });
+
+        document.getElementById('unirPdfBtn').addEventListener('click', async function() {
+            if (selectedFilesUnir.length < 2) {
+                alert('Por favor, selecciona al menos dos PDFs para unir.');
+                return;
+            }
+
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            for (let file of selectedFilesUnir) {
+                const fileData = await file.arrayBuffer();
+                const pdf = await PDFLib.PDFDocument.load(fileData, {
+                    ignoreEncryption: true
+                });
+                const copiedPages = await pdfDoc.copyPages(pdf, pdf.getPageIndices());
+                copiedPages.forEach((page) => pdfDoc.addPage(page));
+            }
+
+            const mergedPdfBytes = await pdfDoc.save();
+            downloadFile(mergedPdfBytes, "PDF_unido.pdf");
+        });
+
+
+
+        // Separar PDF
+        document.getElementById('singlePdf').addEventListener('change', function(event) {
+            selectedFileSeparar = event.target.files[0];
+            updateFileDisplay('singlePdf', 'separarFileDisplayArea', 'separarFileName', 'separarRemoveFileBtn',
+                selectedFileSeparar);
+        });
+
+        document.getElementById('separarPdfBtn').addEventListener('click', async function() {
+            if (!selectedFileSeparar) {
+                alert('Por favor, selecciona un archivo PDF.');
+                return;
+            }
+
+            const fileData = await selectedFileSeparar.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(fileData);
+            const numPages = pdfDoc.getPageCount();
+
+            // Pedir al usuario que seleccione las páginas
+            let selectedPages = prompt(`Selecciona las páginas que deseas separar (por ejemplo, 1,3,5):`);
+
+            if (selectedPages) {
+                // Convertir las páginas seleccionadas a un arreglo de números
+                selectedPages = selectedPages.split(',').map(page => parseInt(page.trim()) -
+                    1); // Restar 1 porque la indexación en JavaScript comienza en 0
+
+                // Validar que las páginas existan en el archivo
+                const invalidPages = selectedPages.filter(page => page < 0 || page >= numPages);
+                if (invalidPages.length > 0) {
+                    alert(`Las siguientes páginas no existen en este documento: ${invalidPages.join(', ')}`);
+                    return;
+                }
+
+                // Crear y descargar los PDFs con las páginas seleccionadas
+                await separarPDF(pdfDoc, selectedPages);
+            } else {
+                alert("No se seleccionaron páginas.");
+            }
+        });
+
+        async function separarPDF(pdfDoc, selectedPages) {
+            const pdfDocs = [];
+
+            for (let i = 0; i < selectedPages.length; i++) {
+                const pageIndex = selectedPages[i];
+                const newPdf = await PDFLib.PDFDocument.create();
+                const [copiedPage] = await newPdf.copyPages(pdfDoc, [pageIndex]);
+                newPdf.addPage(copiedPage);
+                const pdfBytes = await newPdf.save();
+                pdfDocs.push(pdfBytes);
+
+                // Descargar cada PDF separado
+                downloadFile(pdfBytes, `Page_${pageIndex + 1}.pdf`);
+            }
+        }
+
+
+        document.getElementById('pdfToPPT').addEventListener('change', function(event) {
+            selectedFileConvertir = event.target.files[0];
+            updateFileDisplay('pdfToPPT', 'convertirFileDisplayArea', 'convertirFileName',
+            'convertirRemoveFileBtn');
+        });
+
+        async function convertirPdfAPowerPoint(pdfFile) {
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const pdfData = new Uint8Array(fileReader.result);
+                const pdfDoc = await pdfjsLib.getDocument(pdfData).promise;
+
+                const pptx = new PptxGenJS(); // Crear nueva presentación
+                const numPages = pdfDoc.numPages;
+
+                // Iterar por cada página del PDF
+                for (let i = 1; i <= numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const viewport = page.getViewport({
+                        scale: 2
+                    });
+
+                    // Crear un canvas para renderizar la página del PDF como una imagen
+                    const canvas = document.createElement("canvas");
+                    const context = canvas.getContext("2d");
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    // Renderizar la página del PDF al canvas
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+
+                    // Convertir el canvas a una imagen en base64
+                    const imgData = canvas.toDataURL("image/png");
+
+                    // Crear una diapositiva en PowerPoint y agregar la imagen
+                    let slide = pptx.addSlide();
+                    slide.addImage({
+                        data: imgData,
+                        x: 0,
+                        y: 0,
+                        w: "100%",
+                        h: "100%"
+                    });
+                }
+
+                // Descargar la presentación
+                pptx.writeFile({
+                    fileName: 'pdf_a_pptx.pptx'
+                });
+            };
+
+            fileReader.readAsArrayBuffer(pdfFile);
+        }
+    </script>
+</body>
+
+</html>
