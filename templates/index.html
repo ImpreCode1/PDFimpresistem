@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.9.0/pptxgen.min.js"></script>
+    <link rel="icon" href="https://cdn.icon-icons.com/icons2/2753/PNG/512/ext_pdf_filetype_icon_176234.png">
 </head>
 
 <body class="flex flex-col h-screen">
@@ -213,7 +214,7 @@
                         {% if output_file %}
                         <div class="mt-4 text-center">
                             <h2 class="text-lg font-bold text-green-700 mb-2">Conversión completada</h2>
-                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                            <a href="{{ output_file | urlencode }}" download class="text-blue-600 hover:underline">
                                 Descargar archivo Word
                             </a>
                         </div>
@@ -230,7 +231,7 @@
 
     <footer class="bg-gray-900 py-6">
         <div class="text-white text-sm">
-            Copyright &copy; Impresistem S.A.S 2024 | Developer: Kevin Jhoe Gómez 
+            Copyright &copy; Impresistem S.A.S 2024 
         </div>
         
     </footer>
@@ -431,21 +432,7 @@
         }
 
        
-        {% if output_file %}
-        document.addEventListener('DOMContentLoaded', function() {
-            const downloadLink = document.getElementById('downloadLink');
-            
-            downloadLink.addEventListener('click', function(e) {
-                // Esperar un breve momento para asegurar la descarga
-                setTimeout(() => {
-                    // Redirigir a la página principal o recargar
-                    window.location.href = '/';
-                }, 100);
-            });
-        });
-        {% endif %}
-
-        const fileInput = document.getElementById('pdf_file');
+            const fileInput = document.getElementById('pdf_file');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const fileRemoveArea = document.getElementById('fileRemoveArea');
         const removeFileBtn = document.getElementById('removeFileBtn');

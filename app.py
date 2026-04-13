@@ -5,8 +5,8 @@ import os
 app = Flask(__name__)
 
 # Directorio donde se guardarán los archivos cargados y convertidos
-UPLOAD_FOLDER = 'uploads'
-OUTPUT_FOLDER = 'outputs'
+UPLOAD_FOLDER = '/var/www/html/PDFimpresistem/uploads'
+OUTPUT_FOLDER = '/var/www/html/PDFimpresistem/outputs'
 
 # Crear los directorios si no existen
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -48,7 +48,9 @@ def convert():
 @app.route('/download/<filename>')
 def download_file(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
+# Aquí es donde asignas la variable `application` para que mod_wsgi la encuentre
+application = app  # Asigna 'app' a 'application'
 
-if __name__ == '__main__':
-    # app.run(debug=True)
-    app.run(host='0.0.0.0', port=8080, debug=True)
+# Si estás ejecutando localmente, puedes usar esto para pruebas en desarrollo:
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=8080, debug=True)
