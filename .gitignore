@@ -1,5 +1,6 @@
 # Entorno virtual
 .venv/
+venv/
 
 # Archivos de usuario
 uploads/
