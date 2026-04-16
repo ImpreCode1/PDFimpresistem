@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, send_from_directory
 from pdf2docx import Converter
+import fitz
 import os
 
 app = Flask(__name__)
@@ -15,6 +16,39 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 @app.route('/')
 def index():
     return render_template('index.html', output_file=None)
+
+@app.route('/rotate', methods=['POST'])
+def rotate_pdf():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+    angulo = request.form.get('angulo', '90')
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    try:
+        angulo = int(angulo)
+        if angulo not in [90, 180, 270]:
+            return 'Ángulo inválido. Use 90, 180 o 270.', 400
+    except ValueError:
+        return 'El ángulo debe ser un número.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_rotado.docx'
+    output_filename = file.filename.rsplit('.', 1)[0] + '_rotado.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    doc = fitz.open(pdf_path)
+    for page in doc:
+        page.set_rotation(angulo)
+    doc.save(output_path)
+    doc.close()
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
 
 @app.route('/convert', methods=['POST'])
 def convert():
