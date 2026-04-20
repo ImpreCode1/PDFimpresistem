@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
@@ -10,9 +10,9 @@
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.15.349/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script> -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.9.0/pptxgen.min.js"></script>
+    
 </head>
 
 <body class="flex flex-col h-screen">
@@ -195,6 +195,12 @@
         let selectedFileSeparar = null;
         let selectedFileConvertir = null;
 
+        const resetSelectionByInput = {
+            pdfToPPT: () => { selectedFileConvertir = null; },
+            pdfFiles: () => { selectedFilesUnir = []; },
+            singlePdf: () => { selectedFileSeparar = null; }
+        };
+
         // Funciones generales de carga y eliminación de archivos
         function updateFileDisplay(inputId, displayAreaId, fileNameId, removeBtnId, selectedFiles, isMultiple = false) {
             const fileInput = document.getElementById(inputId);
@@ -210,11 +216,15 @@
             }
 
             // Eliminar archivo
-            removeFileBtn.addEventListener('click', function() {
-                selectedFiles = isMultiple ? [] : null;
+            removeFileBtn.onclick = function() {
+                const resetSelection = resetSelectionByInput[inputId];
+                if (resetSelection) {
+                    resetSelection();
+                }
                 fileInput.value = ''; // Limpiar input
+                fileNameDisplay.textContent = '';
                 fileDisplayArea.classList.add('hidden'); // Ocultar vista previa
-            });
+            };
         }
 
         document.getElementById('pdfToPPT').addEventListener('change', function(event) {
@@ -300,7 +310,8 @@
                 // Validar que las páginas existan en el archivo
                 const invalidPages = selectedPages.filter(page => page < 0 || page >= numPages);
                 if (invalidPages.length > 0) {
-                    alert(`Las siguientes páginas no existen en este documento: ${invalidPages.join(', ')}`);
+                    const invalidPagesHuman = invalidPages.map(page => page + 1);
+                    alert(`Las siguientes páginas no existen en este documento: ${invalidPagesHuman.join(', ')}`);
                     return;
                 }
 
@@ -326,13 +337,6 @@
                 downloadFile(pdfBytes, `Page_${pageIndex + 1}.pdf`);
             }
         }
-
-
-        document.getElementById('pdfToPPT').addEventListener('change', function(event) {
-            selectedFileConvertir = event.target.files[0];
-            updateFileDisplay('pdfToPPT', 'convertirFileDisplayArea', 'convertirFileName',
-            'convertirRemoveFileBtn');
-        });
 
         async function convertirPdfAPowerPoint(pdfFile) {
             const fileReader = new FileReader();
