@@ -6,8 +6,6 @@ import os
 import zipfile
 from flask import send_file
 from werkzeug.utils import secure_filename  # agregar al import existente
-import weasyprint          # HTML a PDF
-from weasyprint import HTML as WeasyprintHTML
 import pikepdf             # PDF a PDF/A
 import pdfplumber          # PDF a Excel
 import pytesseract         # OCR PDF
@@ -147,6 +145,12 @@ def extract_pages():
 def html_to_pdf():
     html_file = request.files.get('html_file')
     html_string = request.form.get('html_string', '').strip()
+
+    # Import diferido para no romper el arranque de Flask si faltan dependencias nativas.
+    try:
+        from weasyprint import HTML as WeasyprintHTML
+    except Exception:
+        return 'No se pudo inicializar HTML a PDF. Instala las dependencias de WeasyPrint en el sistema.', 500
 
     # Verificar que venga al menos una fuente
     tiene_archivo = html_file and html_file.filename != ''
