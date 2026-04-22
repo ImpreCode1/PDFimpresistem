@@ -133,7 +133,6 @@
                     </div>
 
                     <!-- Convertir a PowerPoint -->
-
                     <div
                         class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                         <div class="p-8">
@@ -172,6 +171,100 @@
                                     Convertir a PowerPoint
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Reparar PDF -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Reparar PDF</h2>
+                            <p class="text-gray-600 mb-6">Intenta recuperar un PDF dañado o corrupto</p>
+
+                            <form action="/repair" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-red-400 transition-all duration-300">
+                                    <input type="file" name="pdf_file" id="pdf_repair" accept=".pdf" class="hidden" required>
+                                    <label for="pdf_repair" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF dañado</p>
+                                    </label>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                    Reparar PDF
+                                </button>
+                            </form>
+
+                            {% if output_file %}
+                            <div class="mt-4 text-center">
+                                <h2 class="text-lg font-bold text-red-700 mb-2">Reparación completada</h2>
+                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                                    Descargar PDF reparado
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- PDF a PDF/A -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">PDF a PDF/A</h2>
+                            <p class="text-gray-600 mb-6">Convierte tu PDF al formato estándar de archivado a largo plazo</p>
+
+                            <form action="/pdf_to_pdfa" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-emerald-400 transition-all duration-300">
+                                    <input type="file" name="pdf_file" id="pdf_to_pdfa" accept=".pdf" class="hidden" required>
+                                    <label for="pdf_to_pdfa" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
+                                    </label>
+                                </div>
+
+                                <div class="bg-emerald-50 rounded-xl p-4">
+                                    <p class="text-xs text-emerald-700 font-medium mb-1">Formato de salida</p>
+                                    <p class="text-xs text-emerald-600">PDF/A-2B — Estándar ISO 19005-2, nivel básico. Compatible con entidades gubernamentales y archivos legales.</p>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                    Convertir a PDF/A
+                                </button>
+                            </form>
+
+                            {% if output_file %}
+                            <div class="mt-4 text-center">
+                                <h2 class="text-lg font-bold text-emerald-700 mb-2">Conversión completada</h2>
+                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                                    Descargar PDF/A
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 

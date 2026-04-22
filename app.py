@@ -179,6 +179,79 @@ def html_to_pdf():
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
+#Reparar PDF
+@app.route('/repair', methods=['POST'])
+def repair_pdf():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_reparado.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        # Forzar lectura completa del documento
+        for page in doc:
+            _ = page.get_text()
+
+        doc.save(
+            output_path,
+            garbage=4,
+            deflate=True,
+            clean=True,
+            linear=True
+        )
+        doc.close()
+
+    except Exception as e:
+        return f'No se pudo reparar el archivo: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
+#PDF a PDF/A
+@app.route('/pdf_to_pdfa', methods=['POST'])
+def pdf_to_pdfa():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_pdfa.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        with pikepdf.open(pdf_path) as pdf:
+            with pdf.open_metadata(set_pikepdf_as_editor=False) as meta:
+                meta['pdfaid:part'] = '2'
+                meta['pdfaid:conformance'] = 'B'
+                meta['dc:format'] = 'application/pdf'
+
+            pdf.save(
+                output_path,
+                compress_streams=True,
+                object_stream_mode=pikepdf.ObjectStreamMode.generate
+            )
+
+    except Exception as e:
+        return f'Error al convertir el archivo: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
 # Recortar PDF
 @app.route('/crop', methods=['POST'])
 def crop_pdf():
