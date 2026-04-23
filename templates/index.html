@@ -1361,7 +1361,126 @@
                         </div>
                         {% endif %}
                     </div>
-</div>
+                </div>
+
+                <!-- Censurar PDF -->
+                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                    <div class="p-8">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21">
+                                </path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Censurar PDF</h2>
+                        <p class="text-gray-600 mb-6">Oculta zonas sensibles de una página con rectángulos de color</p>
+
+                        <form action="/censor" method="POST" enctype="multipart/form-data" class="space-y-4">
+                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-gray-400 transition-all duration-300">
+                                <input type="file" name="pdf_file" id="pdf_censor" accept=".pdf" class="hidden" required>
+                                <label for="pdf_censor" class="cursor-pointer">
+                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                        </path>
+                                    </svg>
+                                    <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Página</label>
+                                <input type="number" name="pagina" value="1" min="1"
+                                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-gray-400">
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Zonas a censurar (x0,y0,x1,y1 en % — una por línea)</label>
+                                <textarea
+                                    name="zonas"
+                                    rows="4"
+                                    placeholder="10,20,40,30&#10;60,50,90,60"
+                                    class="w-full border border-gray-300 rounded-xl py-3 px-4 text-gray-700 focus:outline-none focus:border-gray-400 font-mono text-sm resize-none"
+                                    required></textarea>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Color de censura</label>
+                                <input type="color" name="color" value="#000000"
+                                    class="w-full h-10 border border-gray-300 rounded-xl cursor-pointer">
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <p class="text-xs text-gray-600 font-medium mb-1">Formato de coordenadas</p>
+                                <p class="text-xs text-gray-500">Cada línea: <span class="font-mono">x0,y0,x1,y1</span> donde cada valor es un porcentaje de la página (0-100). Ejemplo: <span class="font-mono">10,20,40,30</span> cubre desde el 10% horizontal y 20% vertical hasta el 40% y 30%.</p>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                Censurar PDF
+                            </button>
+                        </form>
+
+                        {% if output_file is defined and output_file %}
+                        <div class="mt-4 text-center">
+                            <h2 class="text-lg font-bold text-gray-700 mb-2">PDF censurado</h2>
+                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                                Descargar PDF censurado
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- OCR PDF -->
+                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                    <div class="p-8">
+                        <div class="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                                </path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">OCR PDF</h2>
+                        <p class="text-gray-600 mb-6">Convierte un PDF escaneado en un documento con texto buscable y copiable</p>
+
+                        <form action="/ocr" method="POST" enctype="multipart/form-data" class="space-y-4">
+                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-teal-400 transition-all duration-300">
+                                <input type="file" name="pdf_file" id="pdf_ocr" accept=".pdf" class="hidden" required>
+                                <label for="pdf_ocr" class="cursor-pointer">
+                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                        </path>
+                                    </svg>
+                                    <p class="text-sm text-gray-500">Selecciona un PDF escaneado</p>
+                                </label>
+                            </div>
+
+                            <div class="bg-teal-50 rounded-xl p-4">
+                                <p class="text-xs text-teal-700 font-medium mb-1">Requisito del servidor</p>
+                                <p class="text-xs text-teal-600">Esta función requiere que Tesseract OCR esté instalado en el servidor. Si no funciona, ejecuta: <span class="font-mono">sudo apt-get install tesseract-ocr tesseract-ocr-spa</span></p>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                Aplicar OCR
+                            </button>
+                        </form>
+
+                        {% if output_file is defined and output_file %}
+                        <div class="mt-4 text-center">
+                            <h2 class="text-lg font-bold text-teal-700 mb-2">OCR completado</h2>
+                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                                Descargar PDF con texto
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
             </div>
         </section>
 

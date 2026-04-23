@@ -206,7 +206,6 @@ def hex_a_rgb(hex_color):
     b = int(hex_color[4:6], 16) / 255
     return (r, g, b)
 
-
 @app.route('/edit', methods=['POST'])
 def edit_pdf():
     if 'pdf_file' not in request.files:
@@ -264,6 +263,78 @@ def edit_pdf():
 
     except Exception as e:
         return f'Error al editar el archivo: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
+#Censurar PDF
+@app.route('/censor', methods=['POST'])
+def censor_pdf():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+    zonas_texto = request.form.get('zonas', '').strip()
+    color_hex = request.form.get('color', '#000000')
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    if not zonas_texto:
+        return 'Por favor, indica al menos una zona a censurar.', 400
+
+    try:
+        pagina_num = max(1, int(request.form.get('pagina', 1)))
+    except ValueError:
+        return 'El número de página debe ser un entero.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_censurado.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        if pagina_num > doc.page_count:
+            doc.close()
+            return f'El PDF solo tiene {doc.page_count} páginas.', 400
+
+        page = doc[pagina_num - 1]
+        ancho = page.rect.width
+        alto = page.rect.height
+        color = hex_a_rgb(color_hex)
+        zonas_validas = 0
+
+        for linea in zonas_texto.strip().split('\n'):
+            partes = linea.strip().split(',')
+            if len(partes) != 4:
+                continue
+            try:
+                x0, y0, x1, y1 = [float(p.strip()) for p in partes]
+                x0 = ancho * (max(0, min(100, x0)) / 100)
+                y0 = alto  * (max(0, min(100, y0)) / 100)
+                x1 = ancho * (max(0, min(100, x1)) / 100)
+                y1 = alto  * (max(0, min(100, y1)) / 100)
+
+                page.draw_rect(
+                    fitz.Rect(x0, y0, x1, y1),
+                    color=color,
+                    fill=color
+                )
+                zonas_validas += 1
+            except ValueError:
+                continue
+
+        if zonas_validas == 0:
+            doc.close()
+            return 'No se encontraron zonas válidas. Formato esperado: x0,y0,x1,y1', 400
+
+        doc.save(output_path)
+        doc.close()
+
+    except Exception as e:
+        return f'Error al censurar el archivo: {str(e)}', 500
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
@@ -462,7 +533,57 @@ def form_filler_guardar():
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
-#
+#ORC PDF
+@app.route('/ocr', methods=['POST'])
+def ocr_pdf():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_ocr.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc_original = fitz.open(pdf_path)
+        doc_nuevo = fitz.open()
+
+        for page in doc_original:
+            pixmap = page.get_pixmap(dpi=300)
+            imagen_bytes = pixmap.tobytes("png")
+            imagen = Image.open(io.BytesIO(imagen_bytes))
+
+            texto = pytesseract.image_to_string(imagen, lang='spa')
+
+            page_nueva = doc_nuevo.new_page(
+                width=page.rect.width,
+                height=page.rect.height
+            )
+
+            page_nueva.insert_image(page_nueva.rect, stream=imagen_bytes)
+
+            if texto.strip():
+                page_nueva.insert_text(
+                    fitz.Point(0, 20),
+                    texto,
+                    fontsize=0,
+                    color=(1, 1, 1)
+                )
+
+        doc_original.close()
+        doc_nuevo.save(output_path)
+        doc_nuevo.close()
+
+    except Exception as e:
+        return f'Error al aplicar OCR: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
 
 #Firmar PDF
 @app.route('/sign', methods=['POST'])
