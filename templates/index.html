@@ -420,6 +420,188 @@
                         </div>
                     </div>
 
+                    <!-- PDF a PDF/A -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">PDF a PDF/A</h2>
+                            <p class="text-gray-600 mb-6">Convierte tu PDF al formato estándar de archivado a largo plazo</p>
+
+                            <form action="/pdf_to_pdfa" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-emerald-400 transition-all duration-300">
+                                    <input type="file" name="pdf_file" id="pdf_to_pdfa" accept=".pdf" class="hidden" required>
+                                    <label for="pdf_to_pdfa" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
+                                    </label>
+                                    <div id="pdfaFileDisplayArea" class="mt-4 hidden">
+                                        <div id="pdfaFileName"></div>
+                                        <button type="button" id="pdfaRemoveFileBtn"
+                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-emerald-50 rounded-xl p-4">
+                                    <p class="text-xs text-emerald-700 font-medium mb-1">Formato de salida</p>
+                                    <p class="text-xs text-emerald-600">PDF/A-2B — Estándar ISO 19005-2, nivel básico. Compatible con entidades gubernamentales y archivos legales.</p>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                    Convertir a PDF/A
+                                </button>
+                            </form>
+
+                            {% if output_file %}
+                            <div class="mt-4 text-center">
+                                <h2 class="text-lg font-bold text-emerald-700 mb-2">Conversión completada</h2>
+                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                                    Descargar PDF/A
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Rellenador de formularios -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Rellenador de formularios</h2>
+                            <p class="text-gray-600 mb-6">Detecta y rellena automáticamente los campos de un formulario PDF</p>
+
+                            <form action="/form_filler" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-all duration-300">
+                                    <input type="file" name="pdf_file" id="pdf_form" accept=".pdf" class="hidden" required>
+                                    <label for="pdf_form" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona un PDF con formulario</p>
+                                    </label>
+                                    <div id="formFileDisplayArea" class="mt-4 hidden">
+                                        <div id="formFileName"></div>
+                                        <button type="button" id="formRemoveFileBtn"
+                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                                    </div>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                    Detectar campos
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Firmar PDF -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Firmar PDF</h2>
+                            <p class="text-gray-600 mb-6">Inserta tu firma en una página específica del documento</p>
+
+                            <form action="/sign" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-purple-400 transition-all duration-300">
+                                    <input type="file" name="pdf_file" id="pdf_sign" accept=".pdf" class="hidden" required>
+                                    <label for="pdf_sign" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona el PDF a firmar</p>
+                                    </label>
+                                    <div id="signPdfFileDisplayArea" class="mt-4 hidden">
+                                        <div id="signPdfFileName"></div>
+                                        <button type="button" id="signPdfRemoveFileBtn"
+                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                                    </div>
+                                </div>
+
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-purple-400 transition-all duration-300">
+                                    <input type="file" name="firma_file" id="firma_sign" accept=".jpg,.jpeg,.png" class="hidden" required>
+                                    <label for="firma_sign" class="cursor-pointer">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500">Selecciona la imagen de tu firma (JPG o PNG)</p>
+                                    </label>
+                                    <div id="signImageFileDisplayArea" class="mt-4 hidden">
+                                        <div id="signImageFileName"></div>
+                                        <button type="button" id="signImageRemoveFileBtn"
+                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">Página</label>
+                                        <input type="number" name="pagina" value="1" min="1"
+                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">Posición horizontal (%)</label>
+                                        <input type="number" name="pos_x" value="60" min="0" max="90"
+                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">Posición vertical (%)</label>
+                                        <input type="number" name="pos_y" value="80" min="0" max="90"
+                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">Ancho de firma (%)</label>
+                                        <input type="number" name="firma_ancho" value="30" min="5" max="50"
+                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
+                                    </div>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
+                                    Firmar PDF
+                                </button>
+                            </form>
+
+                            {% if output_file %}
+                            <div class="mt-4 text-center">
+                                <h2 class="text-lg font-bold text-purple-700 mb-2">PDF firmado</h2>
+                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
+                                    Descargar PDF firmado
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    
+
                     <!-- Convertir PDF a Word -->
                     <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                     <div class="p-8">
@@ -1030,6 +1212,10 @@
         let selectedFileCompress = null;
         let selectedFilePdfToJpg = null;
         let selectedFilesJpgToPdf = [];
+        let selectedFilePdfA = null;
+        let selectedFileForm = null;
+        let selectedFileSignPdf = null;
+        let selectedFileSignImage = null;
 
         const resetSelectionByInput = {
             pdfToPPT: () => { selectedFileConvertir = null; },
@@ -1047,6 +1233,10 @@
             pdf_compress: () => { selectedFileCompress = null; },
             pdf_to_jpg: () => { selectedFilePdfToJpg = null; },
             jpg_to_pdf: () => { selectedFilesJpgToPdf = []; },
+            pdf_to_pdfa: () => { selectedFilePdfA = null; },
+            pdf_form: () => { selectedFileForm = null; },
+            pdf_sign: () => { selectedFileSignPdf = null; },
+            firma_sign: () => { selectedFileSignImage = null; },
             pdfFiles: () => { selectedFilesUnir = []; },
             singlePdf: () => { selectedFileSeparar = null; }
         };
@@ -1165,6 +1355,30 @@
             selectedFilesJpgToPdf = Array.from(event.target.files);
             updateFileDisplay('jpg_to_pdf', 'jpgToPdfFileDisplayArea', 'jpgToPdfFileName', 'jpgToPdfRemoveFileBtn',
                 selectedFilesJpgToPdf, true);
+        });
+
+        document.getElementById('pdf_to_pdfa').addEventListener('change', function(event) {
+            selectedFilePdfA = event.target.files[0];
+            updateFileDisplay('pdf_to_pdfa', 'pdfaFileDisplayArea', 'pdfaFileName', 'pdfaRemoveFileBtn',
+                selectedFilePdfA);
+        });
+
+        document.getElementById('pdf_form').addEventListener('change', function(event) {
+            selectedFileForm = event.target.files[0];
+            updateFileDisplay('pdf_form', 'formFileDisplayArea', 'formFileName', 'formRemoveFileBtn',
+                selectedFileForm);
+        });
+
+        document.getElementById('pdf_sign').addEventListener('change', function(event) {
+            selectedFileSignPdf = event.target.files[0];
+            updateFileDisplay('pdf_sign', 'signPdfFileDisplayArea', 'signPdfFileName', 'signPdfRemoveFileBtn',
+                selectedFileSignPdf);
+        });
+
+        document.getElementById('firma_sign').addEventListener('change', function(event) {
+            selectedFileSignImage = event.target.files[0];
+            updateFileDisplay('firma_sign', 'signImageFileDisplayArea', 'signImageFileName', 'signImageRemoveFileBtn',
+                selectedFileSignImage);
         });
 
         document.getElementById('convertirPdfBtn').addEventListener('click', function() {

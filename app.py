@@ -252,6 +252,152 @@ def pdf_to_pdfa():
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
+#Rellenar Formulario PDF
+@app.route('/form_filler', methods=['POST'])
+def form_filler():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    try:
+        doc = fitz.open(pdf_path)
+        campos = []
+
+        for page_num, page in enumerate(doc):
+            for field in page.widgets():
+                if field.field_type in [
+                    fitz.PDF_WIDGET_TYPE_TEXT,
+                    fitz.PDF_WIDGET_TYPE_CHECKBOX,
+                    fitz.PDF_WIDGET_TYPE_LISTBOX
+                ]:
+                    campos.append({
+                        'nombre': field.field_name,
+                        'tipo': field.field_type,
+                        'valor_actual': field.field_value or '',
+                        'pagina': page_num
+                    })
+
+        doc.close()
+
+        if not campos:
+            return 'Este PDF no contiene campos de formulario.', 400
+
+    except Exception as e:
+        return f'Error al leer el formulario: {str(e)}', 500
+
+    return render_template(
+        'form_filler.html',
+        campos=campos,
+        pdf_nombre=file.filename
+    )
+@app.route('/form_filler/guardar', methods=['POST'])
+def form_filler_guardar():
+    pdf_nombre = request.form.get('pdf_nombre', '')
+
+    if not pdf_nombre:
+        return 'Nombre de archivo no encontrado.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, pdf_nombre)
+
+    if not os.path.exists(pdf_path):
+        return 'El archivo original ya no está disponible. Sube el PDF nuevamente.', 400
+
+    output_filename = pdf_nombre.rsplit('.', 1)[0] + '_rellenado.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        for page in doc:
+            for field in page.widgets():
+                nombre = field.field_name
+                valor = request.form.get(nombre, '')
+
+                if field.field_type == fitz.PDF_WIDGET_TYPE_CHECKBOX:
+                    field.field_value = valor == 'on'
+                else:
+                    field.field_value = valor
+
+                field.update()
+
+        doc.save(output_path)
+        doc.close()
+
+    except Exception as e:
+        return f'Error al guardar el formulario: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
+#
+
+#Firmar PDF
+@app.route('/sign', methods=['POST'])
+def sign_pdf():
+    if 'pdf_file' not in request.files or 'firma_file' not in request.files:
+        return 'Por favor, sube el PDF y la imagen de tu firma.', 400
+
+    file = request.files['pdf_file']
+    firma = request.files['firma_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF válido.', 400
+
+    extensiones_firma = {'.jpg', '.jpeg', '.png'}
+    ext_firma = os.path.splitext(firma.filename)[1].lower()
+    if ext_firma not in extensiones_firma:
+        return 'La firma debe ser una imagen JPG o PNG.', 400
+
+    try:
+        pagina_num = max(1, int(request.form.get('pagina', 1)))
+        pos_x = max(0, min(90, int(request.form.get('pos_x', 60))))
+        pos_y = max(0, min(90, int(request.form.get('pos_y', 80))))
+        firma_ancho = max(5, min(50, int(request.form.get('firma_ancho', 30))))
+        firma_alto = max(5, min(30, int(request.form.get('firma_alto', 10))))
+    except ValueError:
+        return 'Los valores de posición deben ser números enteros.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_firmado.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        if pagina_num > doc.page_count:
+            doc.close()
+            return f'El PDF solo tiene {doc.page_count} páginas.', 400
+
+        page = doc[pagina_num - 1]
+        ancho = page.rect.width
+        alto = page.rect.height
+
+        x0 = ancho * (pos_x / 100)
+        y0 = alto * (pos_y / 100)
+        x1 = x0 + ancho * (firma_ancho / 100)
+        y1 = y0 + alto * (firma_alto / 100)
+
+        firma_bytes = firma.read()
+        page.insert_image(fitz.Rect(x0, y0, x1, y1), stream=firma_bytes)
+
+        doc.save(output_path)
+        doc.close()
+
+    except Exception as e:
+        return f'Error al firmar el documento: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
+
+
 # Recortar PDF
 @app.route('/crop', methods=['POST'])
 def crop_pdf():
