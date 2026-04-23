@@ -10,7 +10,7 @@ import pikepdf             # PDF a PDF/A
 import pdfplumber
 from openpyxl import Workbook
 import pytesseract         # OCR PDF
-
+import difflib
 
 app = Flask(__name__)
 
@@ -644,7 +644,90 @@ def sign_pdf():
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
+#Comparar PDF
+@app.route('/compare', methods=['POST'])
+def compare_pdf():
+    if 'pdf_file_1' not in request.files or 'pdf_file_2' not in request.files:
+        return 'Por favor, sube los dos archivos PDF a comparar.', 400
 
+    file1 = request.files['pdf_file_1']
+    file2 = request.files['pdf_file_2']
+
+    if file1.filename == '' or not file1.filename.endswith('.pdf'):
+        return 'El primer archivo debe ser un PDF válido.', 400
+
+    if file2.filename == '' or not file2.filename.endswith('.pdf'):
+        return 'El segundo archivo debe ser un PDF válido.', 400
+
+    pdf_path_1 = os.path.join(UPLOAD_FOLDER, 'comparar_1_' + file1.filename)
+    pdf_path_2 = os.path.join(UPLOAD_FOLDER, 'comparar_2_' + file2.filename)
+    file1.save(pdf_path_1)
+    file2.save(pdf_path_2)
+
+    try:
+        doc1 = fitz.open(pdf_path_1)
+        doc2 = fitz.open(pdf_path_2)
+
+        texto1 = []
+        texto2 = []
+
+        for page in doc1:
+            texto1.extend(page.get_text().splitlines())
+
+        for page in doc2:
+            texto2.extend(page.get_text().splitlines())
+
+        doc1.close()
+        doc2.close()
+
+        # Generar tabla HTML con diferencias
+        differ = difflib.HtmlDiff(wrapcolumn=80)
+        tabla_html = differ.make_table(
+            texto1,
+            texto2,
+            fromdesc=file1.filename,
+            todesc=file2.filename,
+            context=True,
+            numlines=3
+        )
+
+        # Construir reporte HTML completo
+        reporte_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comparación de PDFs</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; padding: 2rem; background: #f9f9f9; }}
+        h1 {{ color: #1a1a2e; font-size: 1.5rem; margin-bottom: 0.5rem; }}
+        p {{ color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }}
+        table {{ border-collapse: collapse; width: 100%; font-size: 13px; }}
+        td {{ padding: 4px 8px; vertical-align: top; white-space: pre-wrap; }}
+        .diff_header {{ background: #e8e8e8; font-weight: bold; }}
+        .diff_next {{ background: #d0d0d0; }}
+        .diff_add {{ background: #aaffaa; }}
+        .diff_chg {{ background: #ffff77; }}
+        .diff_sub {{ background: #ffaaaa; }}
+        th {{ background: #333; color: white; padding: 8px; }}
+    </style>
+</head>
+<body>
+    <h1>Reporte de comparación</h1>
+    <p>Comparando <strong>{file1.filename}</strong> contra <strong>{file2.filename}</strong></p>
+    {tabla_html}
+</body>
+</html>"""
+
+        output_filename = 'comparacion.html'
+        output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(reporte_html)
+
+    except Exception as e:
+        return f'Error al comparar los archivos: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
 
 # Recortar PDF
 @app.route('/crop', methods=['POST'])
