@@ -198,6 +198,75 @@ def pdf_to_excel():
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
+#Editar PDF
+def hex_a_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    r = int(hex_color[0:2], 16) / 255
+    g = int(hex_color[2:4], 16) / 255
+    b = int(hex_color[4:6], 16) / 255
+    return (r, g, b)
+
+
+@app.route('/edit', methods=['POST'])
+def edit_pdf():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+    texto = request.form.get('texto', '').strip()
+    color_hex = request.form.get('color', '#000000')
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    if not texto:
+        return 'Por favor, escribe el texto a insertar.', 400
+
+    try:
+        pagina_num = max(1, int(request.form.get('pagina', 1)))
+        pos_x = max(0, min(95, int(request.form.get('pos_x', 10))))
+        pos_y = max(0, min(95, int(request.form.get('pos_y', 50))))
+        fontsize = max(6, min(72, int(request.form.get('fontsize', 12))))
+    except ValueError:
+        return 'Los valores de posición deben ser números enteros.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '_editado.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        if pagina_num > doc.page_count:
+            doc.close()
+            return f'El PDF solo tiene {doc.page_count} páginas.', 400
+
+        page = doc[pagina_num - 1]
+        ancho = page.rect.width
+        alto = page.rect.height
+
+        x = ancho * (pos_x / 100)
+        y = alto * (pos_y / 100)
+
+        color = hex_a_rgb(color_hex)
+
+        page.insert_text(
+            fitz.Point(x, y),
+            texto,
+            fontsize=fontsize,
+            color=color
+        )
+
+        doc.save(output_path)
+        doc.close()
+
+    except Exception as e:
+        return f'Error al editar el archivo: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
 # HTML a PDF
 @app.route('/html_to_pdf', methods=['POST'])
 def html_to_pdf():
