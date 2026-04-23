@@ -3,7 +3,6 @@ from pdf2docx import Converter
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from werkzeug.utils import secure_filename
-from weasyprint import HTML as WeasyprintHTML
 from openpyxl import Workbook
 from PIL import Image
 import pytz
