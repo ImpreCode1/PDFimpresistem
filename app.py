@@ -7,7 +7,8 @@ import zipfile
 from flask import send_file
 from werkzeug.utils import secure_filename  # agregar al import existente
 import pikepdf             # PDF a PDF/A
-import pdfplumber          # PDF a Excel
+import pdfplumber
+from openpyxl import Workbook
 import pytesseract         # OCR PDF
 
 
@@ -141,6 +142,57 @@ def extract_pages():
 
     except ValueError as e:
         return f'Formato de páginas inválido: {str(e)}', 400
+    except Exception as e:
+        return f'Error al procesar el archivo: {str(e)}', 500
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
+#PDF a Excel
+@app.route('/pdf_to_excel', methods=['POST'])
+def pdf_to_excel():
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(pdf_path)
+
+    output_filename = file.filename.rsplit('.', 1)[0] + '.xlsx'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        wb = Workbook()
+        wb.remove(wb.active)  # eliminar hoja vacía por defecto
+        tablas_encontradas = 0
+
+        with pdfplumber.open(pdf_path) as pdf:
+            for page_num, page in enumerate(pdf.pages):
+                tablas = page.extract_tables()
+
+                for tabla_num, tabla in enumerate(tablas):
+                    if not tabla:
+                        continue
+
+                    tablas_encontradas += 1
+                    nombre_hoja = f"Pag{page_num + 1}_Tabla{tabla_num + 1}"
+                    ws = wb.create_sheet(title=nombre_hoja)
+
+                    for fila in tabla:
+                        fila_limpia = [
+                            celda if celda is not None else ''
+                            for celda in fila
+                        ]
+                        ws.append(fila_limpia)
+
+        if tablas_encontradas == 0:
+            return 'No se encontraron tablas en el PDF.', 400
+
+        wb.save(output_path)
+
     except Exception as e:
         return f'Error al procesar el archivo: {str(e)}', 500
 
