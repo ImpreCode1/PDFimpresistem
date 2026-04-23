@@ -20,10 +20,20 @@
     <header class="bg-white py-4 shadow-md">
         <div class="container px-5 flex items-center justify-between">
             <div class="flex items-center">
-
-                <img src="https://www.impresistem.com/img/impresistem-logo-1680109203.jpg" alt="Logotipo de Impresistem" class="h-12 mr-4">
-
+                <img src="https://www.impresistem.com/img/impresistem-logo-1680109203.jpg"
+                    alt="Logotipo de Impresistem" class="h-12 mr-4">
             </div>
+            <form action="/cerrar_sesion" method="POST">
+                <button type="submit"
+                    class="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition-colors duration-200 border border-gray-200 hover:border-red-300 rounded-xl px-4 py-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                    Limpiar archivos
+                </button>
+            </form>
         </div>
     </header>
 

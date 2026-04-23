@@ -1,15 +1,21 @@
-from flask import Flask, request, render_template, send_from_directory
+from flask import Flask, request, render_template, send_from_directory, send_file
 from pdf2docx import Converter
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from werkzeug.utils import secure_filename
+from weasyprint import HTML as WeasyprintHTML
+from openpyxl import Workbook
+from PIL import Image
+import pytz
+import shutil
+import atexit
 import fitz
 import io
 import os
 import zipfile
-from flask import send_file
-from werkzeug.utils import secure_filename  # agregar al import existente
-import pikepdf             # PDF a PDF/A
+import pikepdf
 import pdfplumber
-from openpyxl import Workbook
-import pytesseract         # OCR PDF
+import pytesseract
 import difflib
 
 app = Flask(__name__)
@@ -22,6 +28,44 @@ OUTPUT_FOLDER = os.getenv('OUTPUT_FOLDER', os.path.join(BASE_DIR, 'outputs'))
 # Crear los directorios si no existen
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# ─── Limpieza de archivos ────────────────────────────────────────────
+
+def limpiar_carpeta(carpeta):
+    """Elimina todos los archivos dentro de una carpeta sin borrar la carpeta."""
+    for nombre in os.listdir(carpeta):
+        ruta = os.path.join(carpeta, nombre)
+        try:
+            if os.path.isfile(ruta):
+                os.remove(ruta)
+            elif os.path.isdir(ruta):
+                shutil.rmtree(ruta)
+        except Exception as e:
+            print(f'[Limpieza] Error eliminando {ruta}: {e}')
+
+
+def limpiar_archivos_programada():
+    """Tarea programada: limpia uploads y outputs a las 7 PM Colombia."""
+    print('[Limpieza] Ejecutando limpieza programada...')
+    limpiar_carpeta(UPLOAD_FOLDER)
+    limpiar_carpeta(OUTPUT_FOLDER)
+    print('[Limpieza] Limpieza completada.')
+
+
+# Configurar scheduler
+zona_colombia = pytz.timezone('America/Bogota')
+
+scheduler = BackgroundScheduler(timezone=zona_colombia)
+scheduler.add_job(
+    limpiar_archivos_programada,
+    CronTrigger(hour=19, minute=0, timezone=zona_colombia)
+)
+scheduler.start()
+
+# Detener scheduler limpiamente al cerrar el servidor
+atexit.register(lambda: scheduler.shutdown(wait=False))
+
+# ─────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
