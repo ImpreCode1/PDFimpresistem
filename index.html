@@ -177,68 +177,6 @@
                         </div>
                     </div>
 
-                    <!-- HTML a PDF -->
-                    <div id="tool-html-to-pdf" class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                    <div class="p-8">
-                        <div class="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center mb-6">
-                            <svg class="w-8 h-8 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4">
-                                </path>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">HTML a PDF</h2>
-                        <p class="text-gray-600 mb-6">Convierte un archivo HTML o código HTML en un documento PDF</p>
-
-                        <form action="/html_to_pdf" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-sky-400 transition-all duration-300">
-                                <input type="file" name="html_file" id="html_to_pdf" accept=".html" class="hidden">
-                                <label for="html_to_pdf" class="cursor-pointer">
-                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                        </path>
-                                    </svg>
-                                    <p class="text-sm text-gray-500">Selecciona un archivo .html (opcional)</p>
-                                </label>
-                                <div id="htmlToPdfFileDisplayArea" class="mt-4 hidden">
-                                    <div id="htmlToPdfFileName"></div>
-                                    <button type="button" id="htmlToPdfRemoveFileBtn"
-                                        class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
-                                </div>
-                            </div>
-
-                            <button type="submit"
-                                class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                Convertir a PDF
-                            </button>
-
-                            <div class="text-center text-sm text-gray-400">— o pega tu código HTML —</div>
-
-                            <textarea
-                                name="html_string"
-                                rows="6"
-                                placeholder="<h1>Mi documento</h1><p>Contenido aquí...</p>"
-                                class="w-full border border-gray-300 rounded-xl py-3 px-4 text-gray-700 focus:outline-none focus:border-sky-400 font-mono text-sm resize-none">
-                            </textarea>
-
-                            <button type="submit"
-                                class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                Convertir a PDF
-                            </button>
-                        </form>
-
-                        {% if output_file %}
-                        <div class="mt-4 text-center">
-                            <h2 class="text-lg font-bold text-sky-700 mb-2">Conversión completada</h2>
-                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                Descargar PDF
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
                 <!-- Recortar PDF -->
                 <div id="tool-crop-pdf" class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                     <div class="p-8">
@@ -1222,7 +1160,6 @@
         let selectedFileReorder = null;
         let selectedFileOrganize = null;
         let selectedFilePageNumbers = null;
-        let selectedFileHtmlToPdf = null;
         let selectedFileCrop = null;
         let selectedFileCompress = null;
         let selectedFilePdfToJpg = null;
@@ -1243,7 +1180,6 @@
             pdf_reorder: () => { selectedFileReorder = null; },
             pdf_organize: () => { selectedFileOrganize = null; },
             pdf_pagenumbers: () => { selectedFilePageNumbers = null; },
-            html_to_pdf: () => { selectedFileHtmlToPdf = null; },
             pdf_crop: () => { selectedFileCrop = null; },
             pdf_compress: () => { selectedFileCompress = null; },
             pdf_to_jpg: () => { selectedFilePdfToJpg = null; },
@@ -1340,12 +1276,6 @@
             selectedFilePageNumbers = event.target.files[0];
             updateFileDisplay('pdf_pagenumbers', 'pagenumbersFileDisplayArea', 'pagenumbersFileName', 'pagenumbersRemoveFileBtn',
                 selectedFilePageNumbers);
-        });
-
-        document.getElementById('html_to_pdf').addEventListener('change', function(event) {
-            selectedFileHtmlToPdf = event.target.files[0];
-            updateFileDisplay('html_to_pdf', 'htmlToPdfFileDisplayArea', 'htmlToPdfFileName', 'htmlToPdfRemoveFileBtn',
-                selectedFileHtmlToPdf);
         });
 
         document.getElementById('pdf_crop').addEventListener('change', function(event) {

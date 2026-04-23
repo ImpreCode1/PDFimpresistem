@@ -381,45 +381,6 @@ def censor_pdf():
 
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
-# HTML a PDF
-@app.route('/html_to_pdf', methods=['POST'])
-def html_to_pdf():
-    html_file = request.files.get('html_file')
-    html_string = request.form.get('html_string', '').strip()
-
-    # Import diferido para no romper el arranque de Flask si faltan dependencias nativas.
-    try:
-        from weasyprint import HTML as WeasyprintHTML
-    except Exception:
-        return 'No se pudo inicializar HTML a PDF. Instala las dependencias de WeasyPrint en el sistema.', 500
-
-    # Verificar que venga al menos una fuente
-    tiene_archivo = html_file and html_file.filename != ''
-    tiene_string = bool(html_string)
-
-    if not tiene_archivo and not tiene_string:
-        return 'Por favor, sube un archivo HTML o pega el código HTML.', 400
-
-    if tiene_archivo and not html_file.filename.endswith('.html'):
-        return 'Por favor, sube un archivo con extensión .html', 400
-
-    output_filename = 'documento_convertido.pdf'
-    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-    try:
-        if tiene_archivo:
-            html_filename = secure_filename(html_file.filename)
-            html_path = os.path.join(UPLOAD_FOLDER, html_filename)
-            html_file.save(html_path)
-            WeasyprintHTML(filename=html_path).write_pdf(output_path)
-        else:
-            WeasyprintHTML(string=html_string).write_pdf(output_path)
-
-    except Exception as e:
-        return f'Error al convertir el HTML: {str(e)}', 500
-
-    return render_template('index.html', output_file=f'/download/{output_filename}')
-
 #Reparar PDF
 @app.route('/repair', methods=['POST'])
 def repair_pdf():
