@@ -34,6 +34,7 @@ def pdf_to_jpg():
 
     file = request.files['pdf_file']
     dpi = request.form.get('dpi', '150')
+    image_format = request.form.get('image_format', 'png').lower()
 
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
@@ -44,6 +45,9 @@ def pdf_to_jpg():
             dpi = 150
     except ValueError:
         dpi = 150
+
+    if image_format not in {'jpg', 'png'}:
+        image_format = 'png'
 
     pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
     file.save(pdf_path)
@@ -57,8 +61,10 @@ def pdf_to_jpg():
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for i, page in enumerate(doc):
                 pixmap = page.get_pixmap(dpi=dpi)
-                img_bytes = pixmap.tobytes("jpg")
-                nombre_imagen = f"{nombre_base}_pagina_{i + 1}.jpg"
+                formato_pymupdf = 'jpg' if image_format == 'jpg' else 'png'
+                extension = 'jpg' if image_format == 'jpg' else 'png'
+                img_bytes = pixmap.tobytes(formato_pymupdf)
+                nombre_imagen = f"{nombre_base}_pagina_{i + 1}.{extension}"
                 zipf.writestr(nombre_imagen, img_bytes)
 
         doc.close()
@@ -71,7 +77,7 @@ def pdf_to_jpg():
         buffer,
         mimetype='application/zip',
         as_attachment=True,
-        download_name=f'{nombre_base}_imagenes.zip'
+        download_name=f'{nombre_base}_imagenes_{image_format}.zip'
     )
 
 # Extraer PDF
