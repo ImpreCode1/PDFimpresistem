@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recortar PDF — PDF Impresistem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        #cropCanvas {
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Left Panel -->
+        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
+            <h1 class="text-xl font-bold text-gray-800 mb-4">Recortar PDF</h1>
+            
+            <!-- Upload PDF -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
+                <input type="file" id="pdfInput" accept=".pdf" 
+                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+            </div>
+
+            <!-- Page Selector -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Página</label>
+                <input type="number" id="pageNum" value="1" min="1" 
+                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
+            </div>
+
+            <!-- Margin Inputs -->
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen izquierdo (%)</label>
+                    <input type="number" id="margen_izq" value="0" min="0" max="40" 
+                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen superior (%)</label>
+                    <input type="number" id="margen_sup" value="0" min="0" max="40" 
+                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen derecho (%)</label>
+                    <input type="number" id="margen_der" value="0" min="0" max="40" 
+                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen inferior (%)</label>
+                    <input type="number" id="margen_inf" value="0" min="0" max="40" 
+                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
+                </div>
+            </div>
+
+            <!-- Validation Warning -->
+            <div id="warningArea" class="mb-4 text-sm text-red-600 hidden">
+                Los márgenes combinados no pueden superar el 100%
+            </div>
+
+            <!-- Hidden inputs for backend -->
+            <input type="hidden" name="margen_izq" id="margen_izq_hidden">
+            <input type="hidden" name="margen_der" id="margen_der_hidden">
+            <input type="hidden" name="margen_sup" id="margen_sup_hidden">
+            <input type="hidden" name="margen_inf" id="margen_inf_hidden">
+
+            <!-- Buttons -->
+            <button type="button" id="cropBtn" onclick="cropPDF()" disabled
+                class="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
+                Recortar PDF
+            </button>
+            
+            <button type="button" id="resetBtn" onclick="resetCrop()" disabled
+                class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                Restablecer
+            </button>
+
+            <!-- Download Link -->
+            <div id="downloadArea" class="mt-4 hidden">
+                <h3 class="text-lg font-bold text-green-700 mb-2">PDF recortado</h3>
+                <a id="downloadLink" href="#" download class="text-blue-600 hover:underline">
+                    Descargar PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="flex-1 p-5 overflow-auto flex items-center justify-center bg-gray-100">
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <canvas id="cropCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let canvas;
+        let cropRect;
+        let pdfBase64 = null;
+        let canvasWidth = 595;
+        let canvasHeight = 842;
+        let pageCount = 1;
+
+        const pdfInput = document.getElementById('pdfInput');
+        const pageNum = document.getElementById('pageNum');
+        const cropBtn = document.getElementById('cropBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const warningArea = document.getElementById('warningArea');
+        const downloadArea = document.getElementById('downloadArea');
+        const downloadLink = document.getElementById('downloadLink');
+
+        const marginInputs = {
+            izq: document.getElementById('margen_izq'),
+            der: document.getElementById('margen_der'),
+            sup: document.getElementById('margen_sup'),
+            inf: document.getElementById('margen_inf')
+        };
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('cropCanvas', {
+                selection: false
+            });
+            canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+            canvas.renderAll();
+        }
+
+        function createCropOverlay() {
+            canvas.clear();
+            
+            if (!pdfBase64) {
+                canvas.renderAll();
+                return;
+            }
+
+            fabric.Image.fromURL(pdfBase64, function(img) {
+                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                    scaleX: canvasWidth / img.width,
+                    scaleY: canvasHeight / img.height
+                });
+
+                updateCropRect();
+            });
+        }
+
+        function updateCropRect() {
+            const existing = canvas.getObjects().filter(o => o.isCropRect);
+            existing.forEach(o => canvas.remove(o));
+
+            const mIzq = parseInt(marginInputs.izq.value) || 0;
+            const mSup = parseInt(marginInputs.sup.value) || 0;
+            const mDer = parseInt(marginInputs.der.value) || 0;
+            const mInf = parseInt(marginInputs.inf.value) || 0;
+
+            const left = (mIzq / 100) * canvasWidth;
+            const top = (mSup / 100) * canvasHeight;
+            const width = canvasWidth - left - (mDer / 100) * canvasWidth;
+            const height = canvasHeight - top - (mInf / 100) * canvasHeight;
+
+            const overlayColor = 'rgba(0, 0, 0, 0.5)';
+            
+            const topOverlay = new fabric.Rect({
+                left: 0, top: 0,
+                width: canvasWidth, height: top,
+                fill: overlayColor, selectable: false, evented: false,
+                isCropRect: true
+            });
+            
+            const bottomOverlay = new fabric.Rect({
+                left: 0, top: top + height,
+                width: canvasWidth, height: canvasHeight - top - height,
+                fill: overlayColor, selectable: false, evented: false,
+                isCropRect: true
+            });
+            
+            const leftOverlay = new fabric.Rect({
+                left: 0, top: top,
+                width: left, height: height,
+                fill: overlayColor, selectable: false, evented: false,
+                isCropRect: true
+            });
+            
+            const rightOverlay = new fabric.Rect({
+                left: left + width, top: top,
+                width: canvasWidth - left - width, height: height,
+                fill: overlayColor, selectable: false, evented: false,
+                isCropRect: true
+            });
+
+            cropRect = new fabric.Rect({
+                left: left, top: top,
+                width: width, height: height,
+                fill: 'transparent',
+                stroke: '#2563eb',
+                strokeWidth: 2,
+                strokeDashArray: [5, 5],
+                selectable: true,
+                hasControls: true,
+                hasBorders: false,
+                lockRotation: true,
+                lockScalingFlip: true,
+                isCropRect: true
+            });
+
+            canvas.add(topOverlay, bottomOverlay, leftOverlay, rightOverlay, cropRect);
+            canvas.renderAll();
+
+            cropRect.on('moving', function() {
+                const obj = this;
+                obj.set({
+                    left: Math.max(0, Math.min(canvasWidth - obj.width, obj.left)),
+                    top: Math.max(0, Math.min(canvasHeight - obj.height, obj.top))
+                });
+                updateMarginsFromRect();
+            });
+
+            cropRect.on('scaling', function() {
+                const obj = this;
+                const scaleX = obj.scaleX;
+                const scaleY = obj.scaleY;
+                
+                obj.set({
+                    width: obj.width * scaleX,
+                    height: obj.height * scaleY,
+                    scaleX: 1,
+                    scaleY: 1,
+                    left: Math.max(0, Math.min(canvasWidth - obj.width, obj.left)),
+                    top: Math.max(0, Math.min(canvasHeight - obj.height, obj.top))
+                });
+                updateMarginsFromRect();
+            });
+
+            updateHiddenInputs();
+            validateMargins();
+        }
+
+        function updateMarginsFromRect() {
+            if (!cropRect) return;
+
+            const rect = cropRect;
+            const left = rect.left;
+            const top = rect.top;
+            const width = rect.getScaledWidth();
+            const height = rect.getScaledHeight();
+
+            marginInputs.izq.value = Math.round((left / canvasWidth) * 100);
+            marginInputs.sup.value = Math.round((top / canvasHeight) * 100);
+            marginInputs.der.value = Math.round(((canvasWidth - left - width) / canvasWidth) * 100);
+            marginInputs.inf.value = Math.round(((canvasHeight - top - height) / canvasHeight) * 100);
+
+            updateHiddenInputs();
+            validateMargins();
+        }
+
+        function updateHiddenInputs() {
+            document.getElementById('margen_izq_hidden').value = marginInputs.izq.value;
+            document.getElementById('margen_der_hidden').value = marginInputs.der.value;
+            document.getElementById('margen_sup_hidden').value = marginInputs.sup.value;
+            document.getElementById('margen_inf_hidden').value = marginInputs.inf.value;
+        }
+
+        function validateMargins() {
+            const mIzq = parseInt(marginInputs.izq.value) || 0;
+            const mDer = parseInt(marginInputs.der.value) || 0;
+            const mSup = parseInt(marginInputs.sup.value) || 0;
+            const mInf = parseInt(marginInputs.inf.value) || 0;
+
+            const valid = (mIzq + mDer < 100) && (mSup + mInf < 100);
+            
+            if (!valid) {
+                warningArea.classList.remove('hidden');
+            } else {
+                warningArea.classList.add('hidden');
+            }
+            
+            return valid;
+        }
+
+        function resetCrop() {
+            marginInputs.izq.value = 0;
+            marginInputs.der.value = 0;
+            marginInputs.sup.value = 0;
+            marginInputs.inf.value = 0;
+            updateHiddenInputs();
+            validateMargins();
+            updateCropRect();
+        }
+
+        async function fetchPagePreview() {
+            if (!pdfInput.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('pagina', pageNum.value);
+            
+            try {
+                const response = await fetch('/api/page_preview', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.image) {
+                    pdfBase64 = data.image;
+                    const img = new Image();
+                    img.onload = function() {
+                        const maxW = 800, maxH = 800;
+                        let scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                        canvasWidth = img.width * scale;
+                        canvasHeight = img.height * scale;
+                        canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+                        createCropOverlay();
+                    };
+                    img.src = pdfBase64;
+                    cropBtn.disabled = false;
+                    resetBtn.disabled = false;
+                }
+            } catch (e) {
+                console.error('Error fetching page preview:', e);
+            }
+        }
+
+        async function cropPDF() {
+            if (!pdfInput.files[0]) return;
+            
+            if (!validateMargins()) {
+                alert('Los márgenes no son válidos');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('margen_izq', marginInputs.izq.value);
+            formData.append('margen_der', marginInputs.der.value);
+            formData.append('margen_sup', marginInputs.sup.value);
+            formData.append('margen_inf', marginInputs.inf.value);
+            
+            try {
+                const response = await fetch('/crop', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(result, 'text/html');
+                    const link = doc.querySelector('a[download]');
+                    
+                    if (link) {
+                        downloadLink.href = link.href;
+                        downloadLink.download = link.download;
+                        downloadArea.classList.remove('hidden');
+                    }
+                }
+            } catch (e) {
+                console.error('Error cropping PDF:', e);
+            }
+        }
+
+        pdfInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                fetchPagePreview();
+            }
+        });
+
+        pageNum.addEventListener('change', function() {
+            if (pdfInput.files[0]) {
+                fetchPagePreview();
+            }
+        });
+
+        Object.values(marginInputs).forEach(input => {
+            input.addEventListener('input', function() {
+                if (validateMargins()) {
+                    updateCropRect();
+                }
+            });
+        });
+
+        initCanvas();
+    </script>
+</body>
+</html>

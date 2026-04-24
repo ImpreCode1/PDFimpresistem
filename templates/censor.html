@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Censurar PDF — PDF Impresistem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        #zoneCanvas {
+            border: 2px dashed #d1d5db;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Left Panel -->
+        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
+            <h1 class="text-xl font-bold text-gray-800 mb-4">Censurar PDF</h1>
+            
+            <!-- Upload PDF -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
+                <input type="file" id="pdfInput" accept=".pdf" 
+                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <!-- Page Selector -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Página</label>
+                <input type="number" id="pageNum" value="1" min="1" 
+                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-gray-400">
+            </div>
+
+            <!-- Color Picker -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Color de censura</label>
+                <input type="color" id="colorPicker" value="#000000" 
+                    class="w-full h-10 border border-gray-300 rounded-xl cursor-pointer">
+            </div>
+
+            <!-- Zones List -->
+            <div class="mb-4 flex-grow">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Zonas dibujadas</label>
+                <div id="zonesList" class="space-y-2 max-h-48 overflow-y-auto">
+                    <p class="text-sm text-gray-400 italic">Sin zonas</p>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <form id="censorForm" action="/censor" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="pdf_file" id="pdfFileHidden">
+                <input type="hidden" name="pagina" id="paginaHidden" value="1">
+                <input type="hidden" name="zonas" id="zonasHidden">
+                <input type="hidden" name="color" id="colorHidden" value="#000000">
+                <button type="submit" id="submitBtn" disabled
+                    class="w-full bg-gray-700 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200">
+                    Aplicar censura
+                </button>
+            </form>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="flex-1 p-5 overflow-auto flex items-center justify-center bg-gray-100">
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <canvas id="zoneCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let canvas;
+        let pdfBase64 = null;
+        let currentPage = 1;
+        let zones = [];
+        let isDrawing = false;
+        let startX, startY;
+        let tempRect = null;
+        let pdfFileName = '';
+
+        const canvasEl = document.getElementById('zoneCanvas');
+        const pdfInput = document.getElementById('pdfInput');
+        const pageNum = document.getElementById('pageNum');
+        const colorPicker = document.getElementById('colorPicker');
+        const zonesList = document.getElementById('zonesList');
+        const submitBtn = document.getElementById('submitBtn');
+        const censorForm = document.getElementById('censorForm');
+        const zonasHidden = document.getElementById('zonasHidden');
+        const paginaHidden = document.getElementById('paginaHidden');
+        const colorHidden = document.getElementById('colorHidden');
+        const pdfFileHidden = document.getElementById('pdfFileHidden');
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('zoneCanvas', {
+                selection: false,
+                isDrawingMode: false
+            });
+            
+            canvas.setDimensions({ width: 595, height: 842 });
+            canvas.renderAll();
+        }
+
+        function updateColor() {
+            const color = colorPicker.value;
+            colorHidden.value = color;
+            canvas.getObjects().forEach(obj => {
+                if (obj.stroke) {
+                    obj.set('stroke', color);
+                    obj.set('fill', color + '80');
+                }
+            });
+            canvas.renderAll();
+        }
+
+        function updateZonesList() {
+            if (zones.length === 0) {
+                zonesList.innerHTML = '<p class="text-sm text-gray-400 italic">Sin zonas</p>';
+            } else {
+                zonesList.innerHTML = zones.map((z, i) => `
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg py-2 px-3">
+                        <span class="text-sm text-gray-700">Zona ${i + 1}: ${z.x0}%, ${z.y0}% → ${z.x1}%, ${z.y1}%</span>
+                        <button type="button" onclick="removeZone(${i})" class="text-red-500 hover:text-red-700 text-lg">❌</button>
+                    </div>
+                `).join('');
+            }
+            
+            zonasHidden.value = zones.map(z => `${z.x0},${z.y0},${z.x1},${z.y1}`).join('\n');
+            submitBtn.textContent = `Aplicar censura (${zones.length} zona${zones.length !== 1 ? 's' : ''})`;
+            submitBtn.disabled = zones.length === 0 || !pdfBase64;
+        }
+
+        function removeZone(index) {
+            zones.splice(index, 1);
+            const objects = canvas.getObjects();
+            while (objects.length > 0) {
+                canvas.remove(objects[0]);
+            }
+            zones.forEach(z => {
+                const rect = new fabric.Rect({
+                    left: z.x0 / 100 * canvas.getWidth(),
+                    top: z.y0 / 100 * canvas.getHeight(),
+                    width: (z.x1 - z.x0) / 100 * canvas.getWidth(),
+                    height: (z.y1 - z.y0) / 100 * canvas.getHeight(),
+                    fill: colorPicker.value + '80',
+                    stroke: colorPicker.value,
+                    strokeWidth: 2,
+                    selectable: false,
+                    evented: false
+                });
+                rect.zoneData = z;
+                canvas.add(rect);
+            });
+            updateZonesList();
+            canvas.renderAll();
+        }
+
+        async function fetchPagePreview() {
+            if (!pdfInput.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('pagina', pageNum.value);
+            
+            try {
+                const response = await fetch('/api/page_preview', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.image) {
+                    pdfBase64 = data.image;
+                    zones = [];
+                    const img = new Image();
+                    img.onload = function() {
+                        const maxW = 800;
+                        const maxH = 800;
+                        let scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                        const w = img.width * scale;
+                        const h = img.height * scale;
+                        canvas.setDimensions({ width: w, height: h });
+                        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                            scaleX: scale,
+                            scaleY: scale
+                        });
+                    };
+                    img.src = pdfBase64;
+                    currentPage = parseInt(pageNum.value);
+                    paginaHidden.value = currentPage;
+                    pdfFileName = pdfInput.files[0].name;
+                    pdfFileHidden.value = pdfFileName;
+                    submitBtn.disabled = zones.length === 0;
+                }
+            } catch (e) {
+                console.error('Error fetching page preview:', e);
+            }
+        }
+
+        canvas.on('mouse:down', function(opt) {
+            if (!pdfBase64) return;
+            const pointer = canvas.getPointer(opt.e);
+            startX = pointer.x;
+            startY = pointer.y;
+            isDrawing = true;
+            
+            tempRect = new fabric.Rect({
+                left: startX,
+                top: startY,
+                width: 0,
+                height: 0,
+                fill: colorPicker.value + '80',
+                stroke: colorPicker.value,
+                strokeWidth: 2,
+                selectable: false,
+                evented: false
+            });
+            canvas.add(tempRect);
+        });
+
+        canvas.on('mouse:move', function(opt) {
+            if (!isDrawing || !tempRect) return;
+            const pointer = canvas.getPointer(opt.e);
+            const currentX = pointer.x;
+            const currentY = pointer.y;
+            
+            const width = currentX - startX;
+            const height = currentY - startY;
+            
+            tempRect.set({
+                left: width > 0 ? startX : currentX,
+                top: height > 0 ? startY : currentY,
+                width: Math.abs(width),
+                height: Math.abs(height)
+            });
+            canvas.renderAll();
+        });
+
+        canvas.on('mouse:up', function(opt) {
+            if (!isDrawing || !tempRect) return;
+            isDrawing = false;
+            
+            const left = tempRect.left;
+            const top = tempRect.top;
+            const width = tempRect.getScaledWidth();
+            const height = tempRect.getScaledHeight();
+            
+            if (width < 5 || height < 5) {
+                canvas.remove(tempRect);
+                tempRect = null;
+                return;
+            }
+            
+            const canvasWidth = canvas.getWidth();
+            const canvasHeight = canvas.getHeight();
+            
+            const x0 = (left / canvasWidth * 100).toFixed(1);
+            const y0 = (top / canvasHeight * 100).toFixed(1);
+            const x1 = ((left + width) / canvasWidth * 100).toFixed(1);
+            const y1 = ((top + height) / canvasHeight * 100).toFixed(1);
+            
+            const zoneData = { x0, y0, x1, y1 };
+            tempRect.zoneData = zoneData;
+            zones.push(zoneData);
+            
+            updateZonesList();
+            tempRect = null;
+            canvas.renderAll();
+        });
+
+        pdfInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                pdfFileName = this.files[0].name;
+                pdfFileHidden.value = pdfFileName;
+                fetchPagePreview();
+            }
+        });
+
+        pageNum.addEventListener('change', function() {
+            if (pdfInput.files[0]) {
+                fetchPagePreview();
+            }
+        });
+
+        colorPicker.addEventListener('input', updateColor);
+
+        initCanvas();
+    </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿<!-- Templates Index -->
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -563,113 +564,43 @@
                         </div>
                     </div>
 
-                    <!-- Ordenar PDF -->
+<!-- Ordenar PDF -->
                     <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                         <div class="p-8">
                             <div class="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-6">
                                 <svg class="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4">
-                                    </path>
-                                </svg>
+                                </path>
+                            </svg>
                             </div>
                             <h2 class="text-2xl font-bold text-gray-800 mb-4">Ordenar PDF</h2>
                             <p class="text-gray-600 mb-6">Reorganiza las páginas de tu PDF en el orden que necesitas</p>
 
-                            <form action="/reorder" method="POST" enctype="multipart/form-data" class="space-y-4">
-                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-cyan-400 transition-all duration-300">
-                                    <input type="file" name="pdf_file" id="pdf_reorder" accept=".pdf" class="hidden" required>
-                                    <label for="pdf_reorder" class="cursor-pointer">
-                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                            </path>
-                                        </svg>
-                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
-                                    </label>
-                                    <div id="reorderFileDisplayArea" class="mt-4 hidden">
-                                        <div id="reorderFileName"></div>
-                                        <button type="button" id="reorderRemoveFileBtn"
-                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
-                                    </div>
-                                </div>
-
-                                <input
-                                    type="text"
-                                    name="paginas"
-                                    placeholder="Ej: 3,1,2 (para un PDF de 3 páginas)"
-                                    class="w-full border border-gray-300 rounded-xl py-3 px-4 text-gray-700 focus:outline-none focus:border-cyan-400"
-                                    required>
-
-                                <button type="submit"
-                                    class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                    Ordenar PDF
-                                </button>
-                            </form>
-
-                            {% if output_file %}
-                            <div class="mt-4 text-center">
-                                <h2 class="text-lg font-bold text-cyan-700 mb-2">PDF ordenado</h2>
-                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                    Descargar PDF ordenado
-                                </a>
-                            </div>
-                            {% endif %}
+                            <a href="/reorder_ui"
+                                class="block w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center">
+                                Abrir interfaz interactiva
+                            </a>
                         </div>
                     </div>
 
-                    <!-- Organizar PDF -->
+<!-- Organizar PDF -->
                     <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                         <div class="p-8">
                             <div class="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center mb-6">
                                 <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                    </path>
-                                </svg>
+                                </path>
+                            </svg>
                             </div>
                             <h2 class="text-2xl font-bold text-gray-800 mb-4">Organizar PDF</h2>
                             <p class="text-gray-600 mb-6">Elimina páginas específicas de tu documento PDF</p>
 
-                            <form action="/organize" method="POST" enctype="multipart/form-data" class="space-y-4">
-                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-pink-400 transition-all duration-300">
-                                    <input type="file" name="pdf_file" id="pdf_organize" accept=".pdf" class="hidden" required>
-                                    <label for="pdf_organize" class="cursor-pointer">
-                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                            </path>
-                                        </svg>
-                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
-                                    </label>
-                                    <div id="organizeFileDisplayArea" class="mt-4 hidden">
-                                        <div id="organizeFileName"></div>
-                                        <button type="button" id="organizeRemoveFileBtn"
-                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
-                                    </div>
-                                </div>
-
-                                <input
-                                    type="text"
-                                    name="paginas"
-                                    placeholder="Páginas a eliminar. Ej: 2,5,8 o 3-6"
-                                    class="w-full border border-gray-300 rounded-xl py-3 px-4 text-gray-700 focus:outline-none focus:border-pink-400"
-                                    required>
-
-                                <button type="submit"
-                                    class="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                    Organizar PDF
-                                </button>
-                            </form>
-
-                            {% if output_file %}
-                            <div class="mt-4 text-center">
-                                <h2 class="text-lg font-bold text-pink-700 mb-2">PDF organizado</h2>
-                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                    Descargar PDF organizado
-                                </a>
-                            </div>
-                            {% endif %}
+                            <a href="/organize_ui"
+                                class="block w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center">
+                                Abrir interfaz interactiva
+                            </a>
                         </div>
                     </div>
 
@@ -878,81 +809,25 @@
                         </div>
                     </div>
 
-                    <!-- Recortar PDF -->
+<!-- Recortar PDF -->
                     <div id="tool-crop-pdf" class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                                        <div class="p-8">
-                                            <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
-                                                <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4">
-                                                    </path>
-                                                </svg>
-                                            </div>
-                                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Recortar PDF</h2>
-                                            <p class="text-gray-600 mb-6">Elimina los márgenes de tu PDF indicando el porcentaje a recortar por cada lado</p>
+                        <div class="p-8">
+                            <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
+                                <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4">
+                                </path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Recortar PDF</h2>
+                            <p class="text-gray-600 mb-6">Elimina los márgenes de tu PDF indicando el porcentaje a recortar por cada lado</p>
 
-                                            <form action="/crop" method="POST" enctype="multipart/form-data" class="space-y-4">
-                                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-amber-400 transition-all duration-300">
-                                                    <input type="file" name="pdf_file" id="pdf_crop" accept=".pdf" class="hidden" required>
-                                                    <label for="pdf_crop" class="cursor-pointer">
-                                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                                            </path>
-                                                        </svg>
-                                                        <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
-                                                    </label>
-                                                    <div id="cropFileDisplayArea" class="mt-4 hidden">
-                                                        <div id="cropFileName"></div>
-                                                        <button type="button" id="cropRemoveFileBtn"
-                                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
-                                                    </div>
-                                                </div>
-
-                                                <button type="submit"
-                                                    class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                                    Recortar PDF
-                                                </button>
-
-                                                <div class="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label class="text-xs text-gray-500 mb-1 block">Margen izquierdo (%)</label>
-                                                        <input type="number" name="margen_izq" value="0" min="0" max="40"
-                                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-amber-400">
-                                                    </div>
-                                                    <div>
-                                                        <label class="text-xs text-gray-500 mb-1 block">Margen derecho (%)</label>
-                                                        <input type="number" name="margen_der" value="0" min="0" max="40"
-                                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-amber-400">
-                                                    </div>
-                                                    <div>
-                                                        <label class="text-xs text-gray-500 mb-1 block">Margen superior (%)</label>
-                                                        <input type="number" name="margen_sup" value="0" min="0" max="40"
-                                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-amber-400">
-                                                    </div>
-                                                    <div>
-                                                        <label class="text-xs text-gray-500 mb-1 block">Margen inferior (%)</label>
-                                                        <input type="number" name="margen_inf" value="0" min="0" max="40"
-                                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-amber-400">
-                                                    </div>
-                                                </div>
-
-                                                <button type="submit"
-                                                    class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                                    Recortar PDF
-                                                </button>
-                                            </form>
-
-                                            {% if output_file %}
-                                            <div class="mt-4 text-center">
-                                                <h2 class="text-lg font-bold text-amber-700 mb-2">PDF recortado</h2>
-                                                <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                                    Descargar PDF recortado
-                                                </a>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                            <a href="/crop_ui"
+                                class="block w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center">
+                                Abrir interfaz interactiva
+                            </a>
+                        </div>
+                    </div>
 
                     <!-- Reparar PDF -->
                     <div id="tool-repair-pdf" class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
@@ -1107,74 +982,15 @@
                                     </path>
                                 </svg>
                             </div>
-                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Firmar PDF</h2>
-                            <p class="text-gray-600 mb-6">Inserta tu firma en una página específica del documento</p>
+<h2 class="text-2xl font-bold text-gray-800 mb-4">Firmar PDF</h2>
+                        <p class="text-gray-600 mb-6">Inserta tu firma en una página específica del documento</p>
 
-                            <form action="/sign" method="POST" enctype="multipart/form-data" class="space-y-4">
-                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-purple-400 transition-all duration-300">
-                                    <input type="file" name="pdf_file" id="pdf_sign" accept=".pdf" class="hidden" required>
-                                    <label for="pdf_sign" class="cursor-pointer">
-                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                            </path>
-                                        </svg>
-                                        <p class="text-sm text-gray-500">Selecciona el PDF a firmar</p>
-                                    </label>
-                                    <div id="signPdfFileDisplayArea" class="mt-4 hidden">
-                                        <div id="signPdfFileName"></div>
-                                        <button type="button" id="signPdfRemoveFileBtn"
-                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
-                                    </div>
-                                </div>
+                        <a href="/sign_ui"
+                            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-center block">
+                            Abrir editor visual
+                        </a>
 
-                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-purple-400 transition-all duration-300">
-                                    <input type="file" name="firma_file" id="firma_sign" accept=".jpg,.jpeg,.png" class="hidden" required>
-                                    <label for="firma_sign" class="cursor-pointer">
-                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                            </path>
-                                        </svg>
-                                        <p class="text-sm text-gray-500">Selecciona la imagen de tu firma (JPG o PNG)</p>
-                                    </label>
-                                    <div id="signImageFileDisplayArea" class="mt-4 hidden">
-                                        <div id="signImageFileName"></div>
-                                        <button type="button" id="signImageRemoveFileBtn"
-                                            class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">Página</label>
-                                        <input type="number" name="pagina" value="1" min="1"
-                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">Posición horizontal (%)</label>
-                                        <input type="number" name="pos_x" value="60" min="0" max="90"
-                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">Posición vertical (%)</label>
-                                        <input type="number" name="pos_y" value="80" min="0" max="90"
-                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">Ancho de firma (%)</label>
-                                        <input type="number" name="firma_ancho" value="30" min="5" max="50"
-                                            class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-purple-400">
-                                    </div>
-                                </div>
-
-                                <button type="submit"
-                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                    Firmar PDF
-                                </button>
-                            </form>
-
-                            {% if output_file %}
+                        {% if output_file %}
                             <div class="mt-4 text-center">
                                 <h2 class="text-lg font-bold text-purple-700 mb-2">PDF firmado</h2>
                                 <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
@@ -1232,82 +1048,23 @@
                         {% endif %}
                     </div>
                 </div>
-                <!-- Editar PDF -->
+<!-- Editar PDF -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                     <div class="p-8">
                         <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
                             <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                                </path>
-                            </svg>
+                            </path>
+                        </svg>
                         </div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Editar PDF</h2>
                         <p class="text-gray-600 mb-6">Agrega texto en cualquier posición de una página del PDF</p>
 
-                        <form action="/edit" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-all duration-300">
-                                <input type="file" name="pdf_file" id="pdf_edit" accept=".pdf" class="hidden" required>
-                                <label for="pdf_edit" class="cursor-pointer">
-                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                        </path>
-                                    </svg>
-                                    <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
-                                </label>
-                            </div>
-
-                            <input
-                                type="text"
-                                name="texto"
-                                placeholder="Texto a insertar. Ej: APROBADO, Revisado por..."
-                                class="w-full border border-gray-300 rounded-xl py-3 px-4 text-gray-700 focus:outline-none focus:border-blue-400"
-                                required>
-
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="text-xs text-gray-500 mb-1 block">Página</label>
-                                    <input type="number" name="pagina" value="1" min="1"
-                                        class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-blue-400">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500 mb-1 block">Tamaño de fuente</label>
-                                    <input type="number" name="fontsize" value="12" min="6" max="72"
-                                        class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-blue-400">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500 mb-1 block">Posición horizontal (%)</label>
-                                    <input type="number" name="pos_x" value="10" min="0" max="95"
-                                        class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-blue-400">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500 mb-1 block">Posición vertical (%)</label>
-                                    <input type="number" name="pos_y" value="50" min="0" max="95"
-                                        class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-blue-400">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Color del texto</label>
-                                <input type="color" name="color" value="#000000"
-                                    class="w-full h-10 border border-gray-300 rounded-xl cursor-pointer">
-                            </div>
-
-                            <button type="submit"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                Agregar texto
-                            </button>
-                        </form>
-
-                        {% if output_file is defined and output_file %}
-                        <div class="mt-4 text-center">
-                            <h2 class="text-lg font-bold text-blue-700 mb-2">PDF editado</h2>
-                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                Descargar PDF editado
-                            </a>
-                        </div>
-                        {% endif %}
+                        <a href="/edit_ui"
+                            class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center">
+                            Abrir interfaz interactiva
+                        </a>
                     </div>
                 </div>
 
@@ -1324,51 +1081,10 @@
                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Censurar PDF</h2>
                         <p class="text-gray-600 mb-6">Oculta zonas sensibles de una página con rectángulos de color</p>
 
-                        <form action="/censor" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-gray-400 transition-all duration-300">
-                                <input type="file" name="pdf_file" id="pdf_censor" accept=".pdf" class="hidden" required>
-                                <label for="pdf_censor" class="cursor-pointer">
-                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                        </path>
-                                    </svg>
-                                    <p class="text-sm text-gray-500">Selecciona un archivo PDF</p>
-                                </label>
-                            </div>
-
-                            <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Página</label>
-                                <input type="number" name="pagina" value="1" min="1"
-                                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-gray-400">
-                            </div>
-
-                            <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Zonas a censurar (x0,y0,x1,y1 en % — una por línea)</label>
-                                <textarea
-                                    name="zonas"
-                                    rows="4"
-                                    placeholder="10,20,40,30&#10;60,50,90,60"
-                                    class="w-full border border-gray-300 rounded-xl py-3 px-4 text-gray-700 focus:outline-none focus:border-gray-400 font-mono text-sm resize-none"
-                                    required></textarea>
-                            </div>
-
-                            <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Color de censura</label>
-                                <input type="color" name="color" value="#000000"
-                                    class="w-full h-10 border border-gray-300 rounded-xl cursor-pointer">
-                            </div>
-
-                            <div class="bg-gray-50 rounded-xl p-4">
-                                <p class="text-xs text-gray-600 font-medium mb-1">Formato de coordenadas</p>
-                                <p class="text-xs text-gray-500">Cada línea: <span class="font-mono">x0,y0,x1,y1</span> donde cada valor es un porcentaje de la página (0-100). Ejemplo: <span class="font-mono">10,20,40,30</span> cubre desde el 10% horizontal y 20% vertical hasta el 40% y 30%.</p>
-                            </div>
-
-                            <button type="submit"
-                                class="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                Censurar PDF
-                            </button>
-                        </form>
+                        <a href="/censor_ui"
+                            class="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-center block">
+                            Abrir editor visual
+                        </a>
 
                         {% if output_file is defined and output_file %}
                         <div class="mt-4 text-center">
@@ -1381,107 +1097,43 @@
                     </div>
                 </div>
 
-                <!-- OCR PDF -->
+<!-- OCR PDF -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                     <div class="p-8">
                         <div class="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mb-6">
                             <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
-                                </path>
+                            </path>
                             </svg>
                         </div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-4">OCR PDF</h2>
                         <p class="text-gray-600 mb-6">Convierte un PDF escaneado en un documento con texto buscable y copiable</p>
 
-                        <form action="/ocr" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-teal-400 transition-all duration-300">
-                                <input type="file" name="pdf_file" id="pdf_ocr" accept=".pdf" class="hidden" required>
-                                <label for="pdf_ocr" class="cursor-pointer">
-                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                        </path>
-                                    </svg>
-                                    <p class="text-sm text-gray-500">Selecciona un PDF escaneado</p>
-                                </label>
-                            </div>
-
-                            <div class="bg-teal-50 rounded-xl p-4">
-                                <p class="text-xs text-teal-700 font-medium mb-1">Requisito del servidor</p>
-                                <p class="text-xs text-teal-600">Esta función requiere que Tesseract OCR esté instalado en el servidor. Si no funciona, ejecuta: <span class="font-mono">sudo apt-get install tesseract-ocr tesseract-ocr-spa</span></p>
-                            </div>
-
-                            <button type="submit"
-                                class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                Aplicar OCR
-                            </button>
-                        </form>
-
-                        {% if output_file is defined and output_file %}
-                        <div class="mt-4 text-center">
-                            <h2 class="text-lg font-bold text-teal-700 mb-2">OCR completado</h2>
-                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                Descargar PDF con texto
-                            </a>
-                        </div>
-                        {% endif %}
+                        <a href="/ocr_ui"
+                            class="block w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center">
+                            Abrir interfaz interactiva
+                        </a>
                     </div>
                 </div>
 
-                <!-- Comparar PDF -->
+<!-- Comparar PDF -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                     <div class="p-8">
                         <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6">
                             <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                </path>
+                            </path>
                             </svg>
                         </div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Comparar PDF</h2>
                         <p class="text-gray-600 mb-6">Compara dos versiones de un PDF y obtén un reporte de diferencias</p>
 
-                        <form action="/compare" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Versión original</label>
-                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-indigo-400 transition-all duration-300">
-                                    <input type="file" name="pdf_file_1" id="pdf_compare_1" accept=".pdf" class="hidden" required>
-                                    <label for="pdf_compare_1" class="cursor-pointer">
-                                        <p class="text-sm text-gray-500">Selecciona el PDF original</p>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Versión nueva</label>
-                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-indigo-400 transition-all duration-300">
-                                    <input type="file" name="pdf_file_2" id="pdf_compare_2" accept=".pdf" class="hidden" required>
-                                    <label for="pdf_compare_2" class="cursor-pointer">
-                                        <p class="text-sm text-gray-500">Selecciona el PDF nuevo</p>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="bg-indigo-50 rounded-xl p-4">
-                                <p class="text-xs text-indigo-700 font-medium mb-1">Resultado</p>
-                                <p class="text-xs text-indigo-600">Se genera un reporte HTML con las diferencias resaltadas en color — verde para texto agregado, rojo para texto eliminado, amarillo para cambios.</p>
-                            </div>
-
-                            <button type="submit"
-                                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105">
-                                Comparar PDFs
-                            </button>
-                        </form>
-
-                        {% if output_file is defined and output_file %}
-                        <div class="mt-4 text-center">
-                            <h2 class="text-lg font-bold text-indigo-700 mb-2">Comparación completada</h2>
-                            <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
-                                Descargar reporte HTML
-                            </a>
-                        </div>
-                        {% endif %}
+                        <a href="/compare_ui"
+                            class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center">
+                            Abrir interfaz interactiva
+                        </a>
                     </div>
                 </div>
 

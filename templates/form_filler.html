@@ -4,51 +4,260 @@
     <meta charset="UTF-8">
     <title>Rellenar formulario — PDF Impresistem</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        #pdfCanvas {
+            border: 1px solid #e5e7eb;
+        }
+        .field-card {
+            transition: all 0.2s ease;
+        }
+        .field-card.highlighted {
+            border-color: #3B82F6;
+            background-color: #EFF6FF;
+            box-shadow: 0 0 0 2px #3B82F6;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .field-highlight-pulse {
+            animation: pulse 1s ease-in-out infinite;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-8">
-    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-2xl">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Rellenar formulario</h1>
-        <p class="text-gray-500 text-sm mb-6">Archivo: <span class="font-medium text-gray-700">{{ pdf_nombre }}</span></p>
-
-        <form action="/form_filler/guardar" method="POST" class="space-y-4">
-            <input type="hidden" name="pdf_nombre" value="{{ pdf_nombre }}">
-
-            {% for campo in campos %}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    {{ campo.nombre }}
-                </label>
-
-                {% if campo.tipo == 2 %}
-                    <!-- Checkbox -->
-                    <input
-                        type="checkbox"
-                        name="{{ campo.nombre }}"
-                        {% if campo.valor_actual %}checked{% endif %}
-                        class="w-5 h-5 text-blue-600">
-
-                {% else %}
-                    <!-- Texto -->
-                    <input
-                        type="text"
-                        name="{{ campo.nombre }}"
-                        value="{{ campo.valor_actual }}"
-                        class="w-full border border-gray-300 rounded-xl py-2 px-4 text-gray-700 focus:outline-none focus:border-blue-400">
-                {% endif %}
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Left: PDF Canvas (60%) -->
+        <div class="w-3/5 p-5 overflow-auto flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-xl font-bold text-gray-800">Vista previa del PDF</h1>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Página:</label>
+                    <input type="number" id="pageNum" value="1" min="1" 
+                        class="w-16 border border-gray-300 rounded-lg py-1 px-2 text-center">
+                </div>
             </div>
-            {% endfor %}
-
-            <div class="flex gap-3 pt-4">
-                <a href="/"
-                    class="flex-1 text-center border border-gray-300 text-gray-600 font-semibold py-3 px-6 rounded-xl hover:bg-gray-50 transition">
-                    Cancelar
-                </a>
-                <button type="submit"
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition">
-                    Guardar PDF
-                </button>
+            <div class="flex-1 flex items-center justify-center bg-gray-100 rounded-xl">
+                <div class="bg-white rounded-xl shadow-lg p-4">
+                    <canvas id="pdfCanvas"></canvas>
+                </div>
             </div>
-        </form>
+        </div>
+
+        <!-- Right: Fields Panel (40%) -->
+        <div class="w-2/5 bg-white border-l border-gray-200 p-5 overflow-y-auto">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Campos del formulario</h2>
+            <p class="text-gray-500 text-sm mb-6">Archivo: <span class="font-medium text-gray-700">{{ pdf_nombre }}</span></p>
+
+            <form action="/form_filler/guardar" method="POST" id="formFields">
+                <input type="hidden" name="pdf_nombre" value="{{ pdf_nombre }}">
+
+                {% for pagina in campos|groupby('pagina') %}
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-3 pb-2 border-b">
+                        Página {{ pagina.grouper + 1 }}
+                    </h3>
+                    
+                    {% for campo in pagina.list %}
+                    <div id="field-{{ campo.nombre }}" class="field-card field-card p-3 rounded-xl border-2 border-gray-200 mb-3" data-page="{{ campo.pagina }}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ campo.nombre }}
+                        </label>
+
+                        {% if campo.tipo == 2 %}
+                        <input type="checkbox" name="{{ campo.nombre }}" 
+                            {% if campo.valor_actual %}checked{% endif %}
+                            class="w-5 h-5 text-blue-600 rounded"
+                            onchange="highlightFieldByName('{{ campo.nombre }}')">
+                        {% else %}
+                        <input type="text" name="{{ campo.nombre }}" 
+                            value="{{ campo.valor_actual }}"
+                            class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-blue-400"
+                            onfocus="highlightFieldByName('{{ campo.nombre }}')">
+                        {% endif %}
+                        
+                        {% if campo.rect %}
+                        <input type="hidden" name="{{ campo.nombre }}_rect" 
+                            value='{"x0":{{ campo.rect.x0 }},"y0":{{ campo.rect.y0 }},"x1":{{ campo.rect.x1 }},"y1":{{ campo.rect.y1 }},"page_width":{{ campo.rect.page_width }},"page_height":{{ campo.rect.page_height }}}'>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div class="flex gap-3 pt-4 border-t">
+                    <a href="/" class="flex-1 text-center border border-gray-300 text-gray-600 font-semibold py-3 px-6 rounded-xl hover:bg-gray-50 transition">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition">
+                        Guardar PDF
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <script>
+        const campos = {{ campos|tojson }};
+        let canvas;
+        let canvasWidth = 595;
+        let canvasHeight = 842;
+        let fieldRects = {};
+        let currentPage = 1;
+        const pageNumInput = document.getElementById('pageNum');
+        
+        campos.forEach((campo, idx) => {
+            if (campo.rect) {
+                fieldRects[campo.nombre] = {
+                    ...campo.rect,
+                    page: campo.pagina,
+                    index: idx
+                };
+            }
+        });
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('pdfCanvas', {
+                selection: false
+            });
+            canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+            canvas.renderAll();
+
+            canvas.on('mouse:down', function(opt) {
+                if (opt.target?.data?.fieldName) {
+                    goToField(opt.target.data.fieldName);
+                }
+            });
+
+            loadPage(1);
+        }
+
+        function loadPage(page) {
+            currentPage = page;
+            pageNumInput.value = page;
+            
+            const fieldsOnPage = campos.filter(c => c.pagina === page - 1 && c.rect);
+            
+            if (fieldsOnPage.length > 0 && fieldsOnPage[0].rect) {
+                const firstField = fieldsOnPage[0];
+                canvasWidth = firstField.rect.page_width;
+                canvasHeight = firstField.rect.page_height;
+                
+                const maxW = 700, maxH = 900;
+                const scale = Math.min(maxW / canvasWidth, maxH / canvasHeight, 1);
+                canvasWidth = canvasWidth * scale;
+                canvasHeight = canvasHeight * scale;
+                
+                canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+            }
+            
+            renderFieldHighlights();
+            renderPagePreview();
+        }
+
+        async function renderPagePreview() {
+            const pdfInput = document.querySelector('input[name="pdf_nombre"]');
+            if (!pdfInput) return;
+            
+            const formData = new FormData();
+            formData.append('pdf_nombre', pdfInput.value);
+            formData.append('pagina', currentPage);
+            
+            try {
+                const response = await fetch('/api/page_preview_by_name', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.image) {
+                    fabric.Image.fromURL(data.image, function(img) {
+                        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                            scaleX: canvasWidth / img.width,
+                            scaleY: canvasHeight / img.height
+                        });
+                        renderFieldHighlights();
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading page preview:', e);
+                renderFieldHighlights();
+            }
+        }
+
+        function renderFieldHighlights() {
+            const existing = canvas.getObjects().filter(o => o.isFieldHighlight);
+            existing.forEach(o => canvas.remove(o));
+            
+            const fieldsOnPage = campos.filter(c => c.pagina === currentPage - 1 && c.rect);
+            
+            fieldsOnPage.forEach(campo => {
+                const rect = campo.rect;
+                const scaleX = canvasWidth / rect.page_width;
+                const scaleY = canvasHeight / rect.page_height;
+                
+                const highlight = new fabric.Rect({
+                    left: rect.x0 * scaleX,
+                    top: rect.y0 * scaleY,
+                    width: (rect.x1 - rect.x0) * scaleX,
+                    height: (rect.y1 - rect.y0) * scaleY,
+                    fill: 'rgba(59, 130, 246, 0.2)',
+                    stroke: '#3B82F6',
+                    strokeWidth: 1.5,
+                    selectable: false,
+                    evented: true,
+                    hoverCursor: 'pointer',
+                    isFieldHighlight: true,
+                    data: { fieldName: campo.nombre }
+                });
+                
+                canvas.add(highlight);
+            });
+            
+            canvas.renderAll();
+        }
+
+        function goToField(fieldName) {
+            const card = document.getElementById('field-' + fieldName);
+            if (card) {
+                document.querySelectorAll('.field-card').forEach(c => c.classList.remove('highlighted'));
+                card.classList.add('highlighted');
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                const page = parseInt(card.dataset.page) + 1;
+                if (page !== currentPage) {
+                    loadPage(page);
+                }
+                
+                setTimeout(() => card.classList.remove('highlighted'), 2000);
+            }
+        }
+
+        function highlightFieldByName(fieldName) {
+            const card = document.getElementById('field-' + fieldName);
+            if (card) {
+                document.querySelectorAll('.field-card').forEach(c => c.classList.remove('highlighted'));
+                card.classList.add('highlighted');
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                const page = parseInt(card.dataset.page) + 1;
+                if (page !== currentPage) {
+                    loadPage(page);
+                }
+                
+                setTimeout(() => card.classList.remove('highlighted'), 2000);
+            }
+        }
+
+        pageNumInput.addEventListener('change', function() {
+            const page = parseInt(this.value);
+            if (page >= 1) {
+                loadPage(page);
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', initCanvas);
+    </script>
 </body>
 </html>

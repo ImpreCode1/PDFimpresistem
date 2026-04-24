@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ordenar PDF — PDF Impresistem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        .thumbnail-card {
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .thumbnail-card:active {
+            cursor: grabbing;
+        }
+        .thumbnail-card.sortable-ghost {
+            opacity: 0.5;
+        }
+        .thumbnail-card.sortable-chosen {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Left Panel -->
+        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
+            <h1 class="text-xl font-bold text-gray-800 mb-4">Ordenar PDF</h1>
+            
+            <!-- Upload PDF -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
+                <input type="file" id="pdfInput" accept=".pdf" 
+                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <!-- Page Count -->
+            <div id="pageCount" class="mb-4 text-sm text-gray-600 hidden">
+                <span id="pageCountNum">0</span> páginas
+            </div>
+
+            <!-- Hidden input for order -->
+            <input type="hidden" name="paginas" id="paginas_input">
+
+            <!-- Buttons -->
+            <button type="button" id="applyBtn" onclick="applyOrder()" disabled
+                class="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
+                Aplicar orden
+            </button>
+            
+            <button type="button" id="resetBtn" onclick="resetOrder()" disabled
+                class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                Restablecer orden original
+            </button>
+
+            <!-- Download Link -->
+            <div id="downloadArea" class="mt-4 hidden">
+                <h3 class="text-lg font-bold text-green-700 mb-2">PDF ordenado</h3>
+                <a id="downloadLink" href="#" download class="text-blue-600 hover:underline">
+                    Descargar PDF ordenado
+                </a>
+            </div>
+        </div>
+
+        <!-- Center Panel: Preview -->
+        <div class="w-1/3 border-r border-gray-200 p-5 overflow-auto flex flex-col">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Vista previa</h2>
+            <div id="previewContainer" class="flex-1 flex items-center justify-center bg-gray-100 rounded-xl">
+                <p id="previewPlaceholder" class="text-gray-400 text-center px-4">
+                    Haz clic en una miniatura para previsualizar
+                </p>
+                <img id="previewImage" class="hidden max-w-full max-h-full rounded-lg shadow" alt="Vista previa">
+            </div>
+        </div>
+
+        <!-- Right Panel: Thumbnails Grid -->
+        <div class="flex-1 p-5 overflow-auto">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Miniaturas (arrastra para reordenar)</h2>
+            <div id="thumbnailGrid" class="grid grid-cols-3 gap-4">
+                <!-- Thumbnails will be inserted here -->
+            </div>
+            <div id="emptyState" class="text-center text-gray-400 py-20">
+                Sube un PDF para ver las miniaturas
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pdfInput = document.getElementById('pdfInput');
+        let thumbnailGrid = document.getElementById('thumbnailGrid');
+        let emptyState = document.getElementById('emptyState');
+        let applyBtn = document.getElementById('applyBtn');
+        let resetBtn = document.getElementById('resetBtn');
+        let pageCount = document.getElementById('pageCount');
+        let pageCountNum = document.getElementById('pageCountNum');
+        let previewImage = document.getElementById('previewImage');
+        let previewPlaceholder = document.getElementById('previewPlaceholder');
+        let downloadArea = document.getElementById('downloadArea');
+        let downloadLink = document.getElementById('downloadLink');
+        let paginasInput = document.getElementById('paginas_input');
+        let originalOrder = [];
+        let thumbnails = [];
+        let sortable;
+
+        pdfInput.addEventListener('change', async function() {
+            if (!this.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('pdf_file', this.files[0]);
+            
+            try {
+                const response = await fetch('/api/thumbnails', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.thumbnails) {
+                    thumbnails = data.thumbnails;
+                    originalOrder = thumbnails.map((_, i) => i + 1);
+                    renderThumbnails();
+                    
+                    pageCountNum.textContent = thumbnails.length;
+                    pageCount.classList.remove('hidden');
+                    applyBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    emptyState.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error('Error loading thumbnails:', e);
+            }
+        });
+
+        function renderThumbnails() {
+            thumbnailGrid.innerHTML = '';
+            
+            thumbnails.forEach((thumb, index) => {
+                const card = document.createElement('div');
+                card.className = 'thumbnail-card bg-white rounded-lg shadow overflow-hidden relative';
+                card.dataset.original = index + 1;
+                card.dataset.position = index + 1;
+                
+                const img = document.createElement('img');
+                img.src = thumb;
+                img.className = 'w-full h-32 object-cover';
+                img.alt = 'Página ' + (index + 1);
+                
+                const badges = document.createElement('div');
+                badges.className = 'absolute bottom-0 left-0 right-0 flex justify-between p-2 bg-gradient-to-t from-black/60 to-transparent';
+                
+                const originalBadge = document.createElement('span');
+                originalBadge.className = 'text-xs text-white bg-gray-600/80 px-2 py-1 rounded';
+                originalBadge.textContent = 'P' + (index + 1);
+                
+                const positionBadge = document.createElement('span');
+                positionBadge.className = 'text-xs text-white bg-blue-600/80 px-2 py-1 rounded';
+                positionBadge.dataset.for = 'position';
+                positionBadge.textContent = '#' + (index + 1);
+                
+                badges.appendChild(originalBadge);
+                badges.appendChild(positionBadge);
+                
+                card.appendChild(img);
+                card.appendChild(badges);
+                
+                card.addEventListener('click', function() {
+                    showPreview(thumb);
+                });
+                
+                thumbnailGrid.appendChild(card);
+            });
+            
+            if (sortable) {
+                sortable.destroy();
+            }
+            
+            sortable = new Sortable(thumbnailGrid, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                onEnd: updatePageOrderDisplay
+            });
+            
+            updateHiddenInput();
+        }
+
+        function showPreview(thumbSrc) {
+            previewPlaceholder.classList.add('hidden');
+            previewImage.src = thumbSrc;
+            previewImage.classList.remove('hidden');
+        }
+
+        function updatePageOrderDisplay(evt) {
+            const cards = thumbnailGrid.querySelectorAll('.thumbnail-card');
+            const positionBadges = thumbnailGrid.querySelectorAll('[data-for="position"]');
+            
+            cards.forEach((card, index) => {
+                const position = index + 1;
+                card.dataset.position = position;
+            });
+            
+            positionBadges.forEach((badge, index) => {
+                badge.textContent = '#' + (index + 1);
+            });
+            
+            updateHiddenInput();
+        }
+
+        function updateHiddenInput() {
+            const cards = thumbnailGrid.querySelectorAll('.thumbnail-card');
+            const order = Array.from(cards).map(card => card.dataset.original);
+            paginasInput.value = order.join(',');
+        }
+
+        function resetOrder() {
+            const cards = Array.from(thumbnailGrid.children);
+            const sorted = cards.sort((a, b) => {
+                return parseInt(a.dataset.original) - parseInt(b.dataset.original);
+            });
+            
+            sorted.forEach(card => thumbnailGrid.appendChild(card));
+            updatePageOrderDisplay();
+        }
+
+        async function applyOrder() {
+            if (!pdfInput.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('paginas', paginasInput.value);
+            
+            try {
+                const response = await fetch('/reorder', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(result, 'text/html');
+                    const link = doc.querySelector('a[download]');
+                    
+                    if (link) {
+                        downloadLink.href = link.href;
+                        downloadLink.download = link.download;
+                        downloadArea.classList.remove('hidden');
+                    } else {
+                        const text = doc.querySelector('body').textContent;
+                        if (text.includes('descargar')) {
+                            const urlMatch = text.match(/href="([^"]+)"/);
+                            if (urlMatch) {
+                                downloadLink.href = urlMatch[1];
+                                downloadLink.textContent = 'Descargar PDF ordenado';
+                                downloadArea.classList.remove('hidden');
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error applying order:', e);
+            }
+        }
+    </script>
+</body>
+</html>

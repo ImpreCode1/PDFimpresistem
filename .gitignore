@@ -15,3 +15,6 @@ __pycache__/
 
 # Otros
 *.log
+
+# archivos md, guias y documentacion
+*.md

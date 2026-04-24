@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Firmar PDF — PDF Impresistem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        #signCanvas, #drawCanvas {
+            border: 2px dashed #d1d5db;
+        }
+        #drawCanvas {
+            cursor: crosshair;
+            background: #fff;
+        }
+        .tab-active {
+            border-bottom: 2px solid #2563eb;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Left Panel -->
+        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
+            <h1 class="text-xl font-bold text-gray-800 mb-4">Firmar PDF</h1>
+            
+            <!-- Upload PDF -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
+                <input type="file" id="pdfInput" accept=".pdf" 
+                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <!-- Page Selector -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Página</label>
+                <input type="number" id="pageNum" value="1" min="1" 
+                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-gray-400">
+            </div>
+
+            <!-- Signature Tabs -->
+            <div class="mb-4">
+                <div class="flex border-b border-gray-200 mb-3">
+                    <button type="button" id="tabUpload" onclick="switchTab('upload')"
+                        class="flex-1 pb-2 text-sm font-medium tab-active">Subir imagen</button>
+                    <button type="button" id="tabDraw" onclick="switchTab('draw')"
+                        class="flex-1 pb-2 text-sm font-medium text-gray-500">Dibujar firma</button>
+                </div>
+
+                <!-- Upload Tab -->
+                <div id="tabUploadContent">
+                    <input type="file" id="firmaInput" accept=".jpg,.jpeg,.png" 
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                </div>
+
+                <!-- Draw Tab -->
+                <div id="tabDrawContent" class="hidden">
+                    <canvas id="drawCanvas" width="300" height="120" class="w-full"></canvas>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="clearDraw()" 
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm">
+                            Limpiar
+                        </button>
+                        <button type="button" onclick="useDrawing()" 
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-lg text-sm">
+                            Usar esta firma
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden inputs for form submission -->
+            <input type="hidden" id="pagina" name="pagina" value="1">
+            <input type="hidden" id="pos_x" name="pos_x" value="60">
+            <input type="hidden" id="pos_y" name="pos_y" value="80">
+            <input type="hidden" id="firma_ancho" name="firma_ancho" value="30">
+            <input type="hidden" id="firma_alto" name="firma_alto" value="10">
+
+            <!-- Submit Button -->
+            <button type="button" id="submitBtn" onclick="submitSignedPDF()" disabled
+                class="w-full bg-gray-700 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200">
+                Firmar PDF
+            </button>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="flex-1 p-5 overflow-auto flex items-center justify-center bg-gray-100">
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <canvas id="signCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let canvas;
+        let pdfBase64 = null;
+        let signatureImg = null;
+        let signatureFilename = null;
+        let pdfFileName = '';
+        let isDrawing = false;
+        let lastX, lastY;
+        let drawCtx;
+
+        const signCanvasEl = document.getElementById('signCanvas');
+        const drawCanvasEl = document.getElementById('drawCanvas');
+        const pdfInput = document.getElementById('pdfInput');
+        const firmaInput = document.getElementById('firmaInput');
+        const pageNum = document.getElementById('pageNum');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('signCanvas', {
+                selection: false
+            });
+            canvas.setDimensions({ width: 595, height: 842 });
+            canvas.renderAll();
+        }
+
+        function initDrawCanvas() {
+            drawCtx = drawCanvasEl.getContext('2d');
+            drawCtx.strokeStyle = '#000';
+            drawCtx.lineWidth = 2;
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+
+            drawCanvasEl.addEventListener('mousedown', function(e) {
+                isDrawing = true;
+                const rect = drawCanvasEl.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+            });
+
+            drawCanvasEl.addEventListener('mousemove', function(e) {
+                if (!isDrawing) return;
+                const rect = drawCanvasEl.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                drawCtx.beginPath();
+                drawCtx.moveTo(lastX, lastY);
+                drawCtx.lineTo(x, y);
+                drawCtx.stroke();
+                lastX = x;
+                lastY = y;
+            });
+
+            drawCanvasEl.addEventListener('mouseup', function() { isDrawing = false; });
+            drawCanvasEl.addEventListener('mouseout', function() { isDrawing = false; });
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tabUpload').classList.remove('tab-active');
+            document.getElementById('tabDraw').classList.remove('tab-active');
+            document.getElementById('tabUploadContent').classList.add('hidden');
+            document.getElementById('tabDrawContent').classList.add('hidden');
+            
+            if (tab === 'upload') {
+                document.getElementById('tabUpload').classList.add('tab-active');
+                document.getElementById('tabUploadContent').classList.remove('hidden');
+            } else {
+                document.getElementById('tabDraw').classList.add('tab-active');
+                document.getElementById('tabDrawContent').classList.remove('hidden');
+            }
+        }
+
+        function clearDraw() {
+            drawCtx.clearRect(0, 0, drawCanvasEl.width, drawCanvasEl.height);
+        }
+
+        async function useDrawing() {
+            const dataUrl = drawCanvasEl.toDataURL('image/png');
+            const base64 = dataUrl.split(',')[1];
+            
+            try {
+                const response = await fetch('/api/save_signature', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ signature_base64: dataUrl })
+                });
+                const data = await response.json();
+                if (data.filename) {
+                    signatureFilename = data.filename;
+                    await loadSignatureImage(dataUrl);
+                }
+            } catch (e) {
+                console.error('Error saving signature:', e);
+            }
+        }
+
+        async function fetchPagePreview() {
+            if (!pdfInput.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('pagina', pageNum.value);
+            
+            try {
+                const response = await fetch('/api/page_preview', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.image) {
+                    pdfBase64 = data.image;
+                    const img = new Image();
+                    img.onload = function() {
+                        const maxW = 800, maxH = 800;
+                        let scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                        const w = img.width * scale;
+                        const h = img.height * scale;
+                        canvas.setDimensions({ width: w, height: h });
+                        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                            scaleX: scale,
+                            scaleY: scale
+                        });
+                    };
+                    img.src = pdfBase64;
+                    pdfFileName = pdfInput.files[0].name;
+                    submitBtn.disabled = !signatureImg;
+                }
+            } catch (e) {
+                console.error('Error fetching page preview:', e);
+            }
+        }
+
+        async function loadSignatureImage(src) {
+            fabric.Image.fromURL(src, function(img) {
+                if (signatureImg) {
+                    canvas.remove(signatureImg);
+                }
+                signatureImg = img;
+                const scale = Math.min(150 / img.width, 50 / img.height, 1);
+                img.set({
+                    left: 50,
+                    top: 50,
+                    scaleX: scale,
+                    scaleY: scale
+                });
+                canvas.add(img);
+                canvas.setActiveObject(img);
+                canvas.renderAll();
+                submitBtn.disabled = !pdfBase64;
+            });
+        }
+
+        async function submitSignedPDF() {
+            if (!pdfInput.files[0] || !signatureImg) return;
+
+            const pdfFile = pdfInput.files[0];
+            const FirmaBlob = await (await fetch(signatureImg.getSrc())).blob();
+            const FirmaFile = new File([FirmaBlob], signatureFilename || 'firma.png', { type: 'image/png' });
+
+            const obj = signatureImg;
+            const canvasW = canvas.getWidth();
+            const canvasH = canvas.getHeight();
+
+            const pos_x = Math.round((obj.left / canvasW) * 100);
+            const pos_y = Math.round((obj.top / canvasH) * 100);
+            const firma_ancho = Math.round((obj.getScaledWidth() / canvasW) * 100);
+            const firma_alto = Math.round((obj.getScaledHeight() / canvasH) * 100);
+
+            document.getElementById('pos_x').value = Math.max(0, Math.min(90, pos_x));
+            document.getElementById('pos_y').value = Math.max(0, Math.min(90, pos_y));
+            document.getElementById('firma_ancho').value = Math.max(5, Math.min(50, firma_ancho));
+            document.getElementById('firma_alto').value = Math.max(5, Math.min(30, firma_alto));
+
+            const formData = new FormData();
+            formData.append('pdf_file', pdfFile);
+            formData.append('firma_file', FirmaFile);
+            formData.append('pagina', pageNum.value);
+            formData.append('pos_x', Math.max(0, Math.min(90, pos_x)));
+            formData.append('pos_y', Math.max(0, Math.min(90, pos_y)));
+            formData.append('firma_ancho', Math.max(5, Math.min(50, firma_ancho)));
+            formData.append('firma_alto', Math.max(5, Math.min(30, firma_alto)));
+
+            try {
+                const response = await fetch('/sign', {
+                    method: 'POST',
+                    body: formData
+                });
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = pdfFileName.replace('.pdf', '_firmado.pdf');
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                console.error('Error submitting:', e);
+            }
+        }
+
+        pdfInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                pdfFileName = this.files[0].name;
+                fetchPagePreview();
+            }
+        });
+
+        document.getElementById('pageNum').addEventListener('change', function() {
+            document.getElementById('pagina').value = this.value;
+            if (pdfInput.files[0]) {
+                fetchPagePreview();
+            }
+        });
+
+        firmaInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    signatureFilename = this.files[0].name;
+                    loadSignatureImage(e.target.result);
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        initCanvas();
+        initDrawCanvas();
+    </script>
+</body>
+</html>
