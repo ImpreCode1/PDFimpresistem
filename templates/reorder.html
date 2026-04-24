@@ -28,10 +28,21 @@
             <h1 class="text-xl font-bold text-gray-800 mb-4">Ordenar PDF</h1>
             
             <!-- Upload PDF -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
-                <input type="file" id="pdfInput" accept=".pdf" 
-                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700">Archivo PDF</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center 
+                            hover:border-blue-400 transition-colors cursor-pointer"
+                     onclick="document.getElementById('pdf_file_reorder').click()">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" 
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-sm text-gray-500" id="reorder_filename">
+                        Seleccionar archivo PDF
+                    </p>
+                </div>
+                <input type="file" id="pdf_file_reorder" accept=".pdf" class="hidden">
             </div>
 
             <!-- Page Count -->
@@ -42,16 +53,18 @@
             <!-- Hidden input for order -->
             <input type="hidden" name="paginas" id="paginas_input">
 
-            <!-- Buttons -->
-            <button type="button" id="applyBtn" onclick="applyOrder()" disabled
-                class="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
-                Aplicar orden
-            </button>
-            
-            <button type="button" id="resetBtn" onclick="resetOrder()" disabled
-                class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
-                Restablecer orden original
-            </button>
+            <!-- Buttons - sticky to bottom -->
+            <div class="sticky bottom-0 bg-white pt-3 mt-auto">
+                <button type="button" id="applyBtn" onclick="applyOrder()" disabled
+                    class="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
+                    Aplicar orden
+                </button>
+                
+                <button type="button" id="resetBtn" onclick="resetOrder()" disabled
+                    class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                    Restablecer orden original
+                </button>
+            </div>
 
             <!-- Download Link -->
             <div id="downloadArea" class="mt-4 hidden">
@@ -86,27 +99,33 @@
     </div>
 
     <script>
-        let pdfInput = document.getElementById('pdfInput');
-        let thumbnailGrid = document.getElementById('thumbnailGrid');
-        let emptyState = document.getElementById('emptyState');
-        let applyBtn = document.getElementById('applyBtn');
-        let resetBtn = document.getElementById('resetBtn');
-        let pageCount = document.getElementById('pageCount');
-        let pageCountNum = document.getElementById('pageCountNum');
-        let previewImage = document.getElementById('previewImage');
-        let previewPlaceholder = document.getElementById('previewPlaceholder');
-        let downloadArea = document.getElementById('downloadArea');
-        let downloadLink = document.getElementById('downloadLink');
-        let paginasInput = document.getElementById('paginas_input');
-        let originalOrder = [];
         let thumbnails = [];
-        let sortable;
+        let originalOrder = [];
+        let sortable = null;
+
+        let pdfInput = document.getElementById('pdf_file_reorder');
+        const paginasInput = document.getElementById('paginas_input');
+        const pageCountNum = document.getElementById('pageCountNum');
+        const pageCount = document.getElementById('pageCount');
+        const applyBtn = document.getElementById('applyBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const emptyState = document.getElementById('emptyState');
+        const thumbnailGrid = document.getElementById('thumbnailGrid');
+        const downloadLink = document.getElementById('downloadLink');
+        const downloadArea = document.getElementById('downloadArea');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const previewImage = document.getElementById('previewImage');
 
         pdfInput.addEventListener('change', async function() {
-            if (!this.files[0]) return;
+            if (!this.files || this.files.length === 0) return;
             
+            document.getElementById('reorder_filename').textContent = this.files[0].name;
+            loadThumbnails(this.files[0]);
+        });
+
+        async function loadThumbnails(file) {
             const formData = new FormData();
-            formData.append('pdf_file', this.files[0]);
+            formData.append('pdf_file', file);
             
             try {
                 const response = await fetch('/api/thumbnails', {
@@ -129,7 +148,7 @@
             } catch (e) {
                 console.error('Error loading thumbnails:', e);
             }
-        });
+        }
 
         function renderThumbnails() {
             thumbnailGrid.innerHTML = '';

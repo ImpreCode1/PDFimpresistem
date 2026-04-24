@@ -123,7 +123,7 @@
         });
 
         function startOCRStream() {
-            const eventSource = new EventSource(`/api/ocr/stream?filename=${encodeURIComponent(pdfFilename)}`);
+            const eventSource = new EventSource(`/api/ocr/stream/${encodeURIComponent(pdfFilename)}`);
             
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);

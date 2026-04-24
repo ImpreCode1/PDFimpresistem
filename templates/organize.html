@@ -22,8 +22,18 @@
             <!-- Upload PDF -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
-                <input type="file" id="pdfInput" accept=".pdf" 
-                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100">
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 transition-colors cursor-pointer">
+                    <input type="file" id="pdfInput" accept=".pdf" class="hidden">
+                    <label for="pdfInput" class="cursor-pointer">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <p id="uploadLabel" class="text-sm text-gray-500">Seleccionar PDF</p>
+                    </label>
+                </div>
+                <button type="button" onclick="document.getElementById('pdfInput').click()" class="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm">
+                    Seleccionar archivo
+                </button>
             </div>
 
             <!-- Page Count -->
@@ -44,16 +54,18 @@
             <!-- Hidden input -->
             <input type="hidden" name="paginas" id="paginas_input">
 
-            <!-- Buttons -->
-            <button type="button" id="deleteBtn" onclick="deletePages()" disabled
-                class="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
-                Eliminar páginas
-            </button>
-            
-            <button type="button" id="clearBtn" onclick="clearSelection()" disabled
-                class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
-                Deseleccionar todo
-            </button>
+            <!-- Buttons - sticky to bottom -->
+            <div class="sticky bottom-0 bg-white pt-3 mt-auto">
+                <button type="button" id="deleteBtn" onclick="deletePages()" disabled
+                    class="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
+                    Eliminar páginas
+                </button>
+                
+                <button type="button" id="clearBtn" onclick="clearSelection()" disabled
+                    class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                    Deseleccionar todo
+                </button>
+            </div>
 
             <!-- Download Link -->
             <div id="downloadArea" class="mt-4 hidden">
@@ -97,6 +109,8 @@
 
         pdfInput.addEventListener('change', async function() {
             if (!this.files[0]) return;
+            
+            document.getElementById('uploadLabel').textContent = this.files[0].name;
             
             const formData = new FormData();
             formData.append('pdf_file', this.files[0]);
