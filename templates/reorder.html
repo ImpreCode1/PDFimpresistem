@@ -262,7 +262,7 @@
                     const link = doc.querySelector('a[download]');
                     
                     if (link) {
-                        downloadLink.href = link.href;
+                        downloadLink.href = link.getAttribute('href');
                         downloadLink.download = link.download;
                         downloadArea.classList.remove('hidden');
                     } else {
