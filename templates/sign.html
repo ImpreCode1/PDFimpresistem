@@ -222,7 +222,6 @@
                         const w = img.width * scale;
                         const h = img.height * scale;
                         canvas.setDimensions({ width: w, height: h });
-                        # FIX ALTO: Establecer crossOrigin para evitar problemas con imágenes externas
                         canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
                             scaleX: scale,
                             scaleY: scale,

@@ -5,7 +5,6 @@ from utils import limpiar_carpeta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
-import fitz
 import os
 
 main_bp = Blueprint('main', __name__)
@@ -21,6 +20,12 @@ def reorder_ui():
 def organize_ui():
     """Renderiza la página de organizar PDF."""
     return render_template('organize.html')
+
+
+@main_bp.route('/unir_ui')
+def unir_ui():
+    """Renderiza la página de unir PDFs."""
+    return render_template('unir.html')
 
 
 @main_bp.route('/crop_ui')

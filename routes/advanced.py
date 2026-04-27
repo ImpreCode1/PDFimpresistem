@@ -1,6 +1,6 @@
 # routes/advanced.py — Blueprint: advanced
 
-from flask import Blueprint, request, render_template, redirect, url_for
+from flask import Blueprint, request, render_template, redirect, url_for, send_file
 from werkzeug.utils import secure_filename
 from utils import parsear_paginas, hex_a_rgb
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
@@ -237,7 +237,12 @@ def sign_pdf():
     except Exception as e:
         return f'Error al firmar el documento: {str(e)}', 500
 
-    return render_template('index.html', output_file=f'/download/{output_filename}')
+    return send_file(
+        output_path,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=output_filename
+    )
 
 
 @advanced_bp.route('/pdf_to_excel', methods=['POST'])
