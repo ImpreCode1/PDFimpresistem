@@ -227,6 +227,7 @@
 
         function updateHiddenInput() {
             const cards = thumbnailGrid.querySelectorAll('.thumbnail-card');
+            # FIX ALTO: Usar dataset.original (posición original 1-based) en vez de dataset.position
             const order = Array.from(cards).map(card => card.dataset.original);
             paginasInput.value = order.join(',');
         }

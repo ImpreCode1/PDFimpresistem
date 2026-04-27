@@ -35,19 +35,8 @@ def edit_ui():
     return render_template('edit.html')
 
 
-@main_bp.route('/compare_ui')
-def compare_ui():
-    """Renderiza la página de comparar PDF."""
-    return render_template('compare.html')
-
-
-@main_bp.route('/ocr_ui')
-def ocr_ui():
-    """Renderiza la página de OCR PDF."""
-    return render_template('ocr.html')
-
-
 @main_bp.route('/')
+
 def index():
     """Renderiza la página principal con todas las tarjetas de funciones."""
     return render_template('index.html', output_file=None)

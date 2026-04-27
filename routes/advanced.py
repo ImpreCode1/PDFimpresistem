@@ -1,6 +1,7 @@
 # routes/advanced.py — Blueprint: advanced
 
 from flask import Blueprint, request, render_template, redirect, url_for
+from werkzeug.utils import secure_filename
 from utils import parsear_paginas, hex_a_rgb
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 import fitz
@@ -15,12 +16,6 @@ import difflib
 
 
 advanced_bp = Blueprint('advanced', __name__)
-
-
-@advanced_bp.route('/censor_ui')
-def censor_ui():
-    """Renderiza la interfaz interactiva para censurar PDFs."""
-    return render_template('censor.html')
 
 
 @advanced_bp.route('/sign_ui')
@@ -64,7 +59,8 @@ def form_filler():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
     try:
@@ -206,10 +202,11 @@ def sign_pdf():
     except ValueError:
         return 'Los valores de posición deben ser números enteros.', 400
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    output_filename = file.filename.rsplit('.', 1)[0] + '_firmado.pdf'
+    output_filename = filename.rsplit('.', 1)[0] + '_firmado.pdf'
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
     try:
@@ -270,10 +267,11 @@ def pdf_to_excel():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    output_filename = file.filename.rsplit('.', 1)[0] + '.xlsx'
+    output_filename = filename.rsplit('.', 1)[0] + '.xlsx'
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
     try:
@@ -344,10 +342,11 @@ def edit_pdf():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    output_filename = file.filename.rsplit('.', 1)[0] + '_editado.pdf'
+    output_filename = filename.rsplit('.', 1)[0] + '_editado.pdf'
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
     try:
@@ -418,269 +417,5 @@ def edit_pdf():
 
     except Exception as e:
         return f'Error al editar el archivo: {str(e)}', 500
-
-    return render_template('index.html', output_file=f'/download/{output_filename}')
-
-
-@advanced_bp.route('/censor', methods=['POST'])
-def censor_pdf():
-    """
-    Dibuja rectángulos de color sólido sobre zonas sensibles de una página.
-
-    Las coordenadas se expresan como porcentaje en formato x0,y0,x1,y1
-    (una zona por línea). Las líneas malformadas se ignoran silenciosamente
-    — solo falla si ninguna zona resulta válida.
-
-    Reutiliza hex_a_rgb() definida en la sección de funciones auxiliares.
-
-    Parámetros del formulario:
-        pdf_file (file): PDF a censurar.
-        pagina (int): Número de página (base 1). Por defecto: 1.
-        zonas (str): Coordenadas en % separadas por líneas. Ej: '10,20,40,30'.
-        color (str): Color de censura en hex. Por defecto: '#000000'.
-
-    Returns:
-        Response: Template con enlace al PDF censurado.
-    """
-    if 'pdf_file' not in request.files:
-        return 'No se ha seleccionado un archivo.', 400
-
-    file = request.files['pdf_file']
-    zonas_texto = request.form.get('zonas', '').strip()
-    color_hex = request.form.get('color', '#000000')
-
-    if file.filename == '' or not file.filename.endswith('.pdf'):
-        return 'Por favor, suba un archivo PDF.', 400
-
-    if not zonas_texto:
-        return 'Por favor, indica al menos una zona a censurar.', 400
-
-    try:
-        pagina_num = max(1, int(request.form.get('pagina', 1)))
-    except ValueError:
-        return 'El número de página debe ser un entero.', 400
-
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(pdf_path)
-
-    output_filename = file.filename.rsplit('.', 1)[0] + '_censurado.pdf'
-    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-    try:
-        doc = fitz.open(pdf_path)
-
-        if pagina_num > doc.page_count:
-            doc.close()
-            return f'El PDF solo tiene {doc.page_count} páginas.', 400
-
-        page = doc[pagina_num - 1]
-        ancho = page.rect.width
-        alto = page.rect.height
-        color = hex_a_rgb(color_hex)
-        zonas_validas = 0
-
-        for linea in zonas_texto.strip().split('\n'):
-            partes = linea.strip().split(',')
-            if len(partes) != 4:
-                continue  # línea malformada — ignorar sin error
-            try:
-                x0, y0, x1, y1 = [float(p.strip()) for p in partes]
-                # Convertir porcentajes a puntos y limitar al rango válido
-                x0 = ancho * (max(0, min(100, x0)) / 100)
-                y0 = alto  * (max(0, min(100, y0)) / 100)
-                x1 = ancho * (max(0, min(100, x1)) / 100)
-                y1 = alto  * (max(0, min(100, y1)) / 100)
-
-                # color y fill iguales crean un rectángulo completamente opaco
-                page.draw_rect(fitz.Rect(x0, y0, x1, y1), color=color, fill=color)
-                zonas_validas += 1
-            except ValueError:
-                continue  # línea con texto en vez de números — ignorar
-
-        if zonas_validas == 0:
-            doc.close()
-            return 'No se encontraron zonas válidas. Formato esperado: x0,y0,x1,y1', 400
-
-        doc.save(output_path)
-        doc.close()
-
-    except Exception as e:
-        return f'Error al censurar el archivo: {str(e)}', 500
-
-    return render_template('index.html', output_file=f'/download/{output_filename}')
-
-
-@advanced_bp.route('/ocr', methods=['POST'])
-def ocr_pdf():
-    """
-    Aplica reconocimiento óptico de caracteres (OCR) a un PDF escaneado.
-
-    Convierte cada página del PDF en imagen, extrae el texto con Tesseract
-    y lo incrusta de forma invisible en el PDF resultado. El PDF resultante
-    mantiene la apariencia visual original pero el texto es buscable y copiable.
-
-    Requiere en el servidor Ubuntu:
-        sudo apt-get install tesseract-ocr tesseract-ocr-spa
-
-    Parámetros del formulario:
-        pdf_file (file): PDF escaneado (imágenes sin texto seleccionable).
-
-    Returns:
-        Response: Template con enlace al PDF con texto OCR incrustado.
-
-    Truco del texto invisible:
-        fontsize=0 + color=(1,1,1) hace el texto blanco sobre blanco —
-        invisible visualmente pero indexado por lectores de PDF para búsqueda.
-    """
-    if 'pdf_file' not in request.files:
-        return 'No se ha seleccionado un archivo.', 400
-
-    file = request.files['pdf_file']
-
-    if file.filename == '' or not file.filename.endswith('.pdf'):
-        return 'Por favor, suba un archivo PDF.', 400
-
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(pdf_path)
-
-    output_filename = file.filename.rsplit('.', 1)[0] + '_ocr.pdf'
-    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-    try:
-        doc_original = fitz.open(pdf_path)
-        doc_nuevo = fitz.open()
-
-        for page in doc_original:
-            # Renderizar página a alta resolución para mejor precisión del OCR
-            pixmap = page.get_pixmap(dpi=300)
-            imagen_bytes = pixmap.tobytes("png")
-
-            # PIL necesita un objeto Image — io.BytesIO convierte bytes a stream
-            imagen = Image.open(io.BytesIO(imagen_bytes))
-            texto = pytesseract.image_to_string(imagen, lang='spa')
-
-            # Crear página del mismo tamaño en el documento nuevo
-            page_nueva = doc_nuevo.new_page(width=page.rect.width, height=page.rect.height)
-
-            # Insertar la imagen original como fondo visual
-            page_nueva.insert_image(page_nueva.rect, stream=imagen_bytes)
-
-            # Insertar el texto extraído de forma invisible para que sea buscable
-            if texto.strip():
-                page_nueva.insert_text(
-                    fitz.Point(0, 20),
-                    texto,
-                    fontsize=0,          # tamaño 0 = invisible
-                    color=(1, 1, 1)      # blanco = invisible sobre fondo claro
-                )
-
-        doc_original.close()
-        doc_nuevo.save(output_path)
-        doc_nuevo.close()
-
-    except Exception as e:
-        return f'Error al aplicar OCR: {str(e)}', 500
-
-    return render_template('index.html', output_file=f'/download/{output_filename}')
-
-
-@advanced_bp.route('/compare', methods=['POST'])
-def compare_pdf():
-    """
-    Compara el texto de dos versiones de un PDF y genera un reporte HTML.
-
-    Usa difflib.HtmlDiff para generar una tabla con las diferencias
-    resaltadas en color: verde para texto agregado, rojo para eliminado
-    y amarillo para cambios. Solo muestra zonas con cambios (context=True)
-    más 3 líneas de contexto alrededor de cada diferencia.
-
-    El resultado es un archivo .html porque las diferencias coloreadas
-    se visualizan mejor en el navegador que en un PDF estático.
-
-    Parámetros del formulario:
-        pdf_file_1 (file): PDF versión original.
-        pdf_file_2 (file): PDF versión nueva.
-
-    Returns:
-        Response: Template con enlace al reporte HTML de comparación.
-    """
-    if 'pdf_file_1' not in request.files or 'pdf_file_2' not in request.files:
-        return 'Por favor, sube los dos archivos PDF a comparar.', 400
-
-    file1 = request.files['pdf_file_1']
-    file2 = request.files['pdf_file_2']
-
-    if file1.filename == '' or not file1.filename.endswith('.pdf'):
-        return 'El primer archivo debe ser un PDF válido.', 400
-
-    if file2.filename == '' or not file2.filename.endswith('.pdf'):
-        return 'El segundo archivo debe ser un PDF válido.', 400
-
-    # Prefijos para evitar colisión de nombres si los dos archivos se llaman igual
-    pdf_path_1 = os.path.join(UPLOAD_FOLDER, 'comparar_1_' + file1.filename)
-    pdf_path_2 = os.path.join(UPLOAD_FOLDER, 'comparar_2_' + file2.filename)
-    file1.save(pdf_path_1)
-    file2.save(pdf_path_2)
-
-    try:
-        doc1 = fitz.open(pdf_path_1)
-        doc2 = fitz.open(pdf_path_2)
-
-        # Extraer texto línea por línea de todo el documento
-        texto1 = []
-        texto2 = []
-        for page in doc1:
-            texto1.extend(page.get_text().splitlines())
-        for page in doc2:
-            texto2.extend(page.get_text().splitlines())
-
-        doc1.close()
-        doc2.close()
-
-        # Generar tabla HTML con diferencias coloreadas
-        differ = difflib.HtmlDiff(wrapcolumn=80)
-        tabla_html = differ.make_table(
-            texto1,
-            texto2,
-            fromdesc=file1.filename,
-            todesc=file2.filename,
-            context=True,    # mostrar solo zonas con diferencias
-            numlines=3       # más 3 líneas de contexto alrededor de cada cambio
-        )
-
-        reporte_html = f"""<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Comparación de PDFs</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; padding: 2rem; background: #f9f9f9; }}
-        h1 {{ color: #1a1a2e; font-size: 1.5rem; margin-bottom: 0.5rem; }}
-        p {{ color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }}
-        table {{ border-collapse: collapse; width: 100%; font-size: 13px; }}
-        td {{ padding: 4px 8px; vertical-align: top; white-space: pre-wrap; }}
-        .diff_header {{ background: #e8e8e8; font-weight: bold; }}
-        .diff_next {{ background: #d0d0d0; }}
-        .diff_add {{ background: #aaffaa; }}
-        .diff_chg {{ background: #ffff77; }}
-        .diff_sub {{ background: #ffaaaa; }}
-        th {{ background: #333; color: white; padding: 8px; }}
-    </style>
-</head>
-<body>
-    <h1>Reporte de comparación</h1>
-    <p>Comparando <strong>{file1.filename}</strong> contra <strong>{file2.filename}</strong></p>
-    {tabla_html}
-</body>
-</html>"""
-
-        output_filename = 'comparacion.html'
-        output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(reporte_html)
-
-    except Exception as e:
-        return f'Error al comparar los archivos: {str(e)}', 500
 
     return render_template('index.html', output_file=f'/download/{output_filename}')

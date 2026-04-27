@@ -422,10 +422,11 @@ def repair_pdf():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    output_filename = file.filename.rsplit('.', 1)[0] + '_reparado.pdf'
+    output_filename = filename.rsplit('.', 1)[0] + '_reparado.pdf'
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
     try:
@@ -546,7 +547,8 @@ def pdf_to_pdfa():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
     output_filename = file.filename.rsplit('.', 1)[0] + '_pdfa.pdf'

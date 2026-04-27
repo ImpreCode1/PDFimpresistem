@@ -1,6 +1,7 @@
 # app.py — slim version after refactor
 
 from flask import Flask
+import os
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from utils import limpiar_archivos_programada
 from routes.main import main_bp
@@ -14,6 +15,8 @@ import pytz
 import atexit
 
 app = Flask(__name__)
+# FIX HIGH: Missing SECRET_KEY causes session inconsistencies across environments
+app.secret_key = os.getenv('SECRET_KEY', 'PDFimpresistem-dev-key-2024')
 
 # Register blueprints
 app.register_blueprint(main_bp)

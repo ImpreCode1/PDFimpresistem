@@ -13,7 +13,17 @@ from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 api_bp = Blueprint('api', __name__)
 
 
-@api_bp.route('/page_preview', methods=['POST'])
+# FIX HIGH: Add CORS headers for cross-origin requests from interactive views
+@api_bp.after_request
+def add_cors_headers(response):
+    """Add CORS headers for cross-origin requests."""
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+
+@api_bp.route('/page_preview', methods=['POST', 'OPTIONS'])
 def page_preview():
     """
     Returns a PNG preview of a specific PDF page as base64.
@@ -40,8 +50,8 @@ def page_preview():
     pdf_bytes = file.read()
     try:
         doc = fitz.open(stream=pdf_bytes, filetype='pdf')
-    except Exception:
-        return jsonify({'error': 'No se pudo abrir el PDF'}), 400
+    except Exception as e:
+        return jsonify({'error': f'No se pudo abrir el PDF: {str(e)}'}), 400
     
     if pagina < 1 or pagina > doc.page_count:
         doc.close()
@@ -60,7 +70,7 @@ def page_preview():
     return jsonify({'image': f'data:image/png;base64,{img_b64}'})
 
 
-@api_bp.route('/save_signature', methods=['POST'])
+@api_bp.route('/save_signature', methods=['POST', 'OPTIONS'])
 def save_signature():
     """
     Saves a signature image from base64 to a temp file.
@@ -93,7 +103,7 @@ def save_signature():
     return jsonify({'filename': filename})
 
 
-@api_bp.route('/thumbnails', methods=['POST'])
+@api_bp.route('/thumbnails', methods=['POST', 'OPTIONS'])
 def thumbnails():
     """
     Returns thumbnails for all pages of a PDF as base64 array.
@@ -135,7 +145,7 @@ def thumbnails():
     return jsonify({'thumbnails': result})
 
 
-@api_bp.route('/page_preview_by_name', methods=['POST'])
+@api_bp.route('/page_preview_by_name', methods=['POST', 'OPTIONS'])
 def page_preview_by_name():
     """
     Returns a PNG preview of a specific PDF page by filename.
@@ -184,105 +194,3 @@ def page_preview_by_name():
     return jsonify({'image': f'data:image/png;base64,{img_b64}'})
 
 
-@api_bp.route('/compare', methods=['POST'])
-def compare_pdfs():
-    """Compara dos PDFs y devuelve HTML de diferencias como JSON."""
-    if 'pdf_file_1' not in request.files or 'pdf_file_2' not in request.files:
-        return jsonify({'error': 'Sube los dos archivos PDF'}), 400
-
-    file1 = request.files['pdf_file_1']
-    file2 = request.files['pdf_file_2']
-
-    if not (file1.filename.endswith('.pdf') and file2.filename.endswith('.pdf')):
-        return jsonify({'error': 'Ambos deben ser archivos PDF'}), 400
-
-    pdf_path_1 = os.path.join(UPLOAD_FOLDER, 'c1_' + file1.filename)
-    pdf_path_2 = os.path.join(UPLOAD_FOLDER, 'c2_' + file2.filename)
-    file1.save(pdf_path_1)
-    file2.save(pdf_path_2)
-
-    try:
-        doc1, doc2 = fitz.open(pdf_path_1), fitz.open(pdf_path_2)
-        texto1 = [line for page in doc1 for line in page.get_text().splitlines()]
-        texto2 = [line for page in doc2 for line in page.get_text().splitlines()]
-        doc1.close()
-        doc2.close()
-
-        differ = difflib.HtmlDiff(wrapcolumn=80)
-        tabla = differ.make_table(texto1, texto2, file1.filename, file2.filename, True, 3)
-
-        html = f"""<style>
-.diff_add{background:#d1fae5}.diff_sub{background:#fee2e2}.diff_chg{background:#fef9c3}
-.diff_header{background:#f3f4f6;font-weight:bold}table.diff{width:100%;font-size:13px;border-collapse:collapse}
-td{padding:4px 8px;vertical-align:top}</style>{tabla}"""
-
-        return jsonify({'html': html, 'file1': file1.filename, 'file2': file2.filename})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@api_bp.route('/ocr/upload', methods=['POST'])
-def ocr_upload():
-    """Sube el PDF y retorna información sin procesarlo."""
-    if 'pdf_file' not in request.files:
-        return jsonify({'error': 'No se ha seleccionado un archivo'}), 400
-    
-    file = request.files['pdf_file']
-    if file.filename == '' or not file.filename.endswith('.pdf'):
-        return jsonify({'error': 'Debe ser un archivo PDF'}), 400
-    
-    filename = 'ocr_' + str(uuid.uuid4().hex[:8]) + '_' + file.filename
-    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(pdf_path)
-    
-    try:
-        doc = fitz.open(pdf_path)
-        total_pages = doc.page_count
-        doc.close()
-        return jsonify({'filename': filename, 'total_pages': total_pages})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@api_bp.route('/ocr/stream/', methods=['GET'])
-def ocr_stream(filename):
-    """Stream de OCR por SSE."""
-    from PIL import Image
-    import pytesseract
-    
-    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
-    if not os.path.exists(pdf_path):
-        return jsonify({'error': 'Archivo no encontrado'}), 404
-    
-    def generate():
-        try:
-            doc = fitz.open(pdf_path)
-            total = doc.page_count
-            
-            for i, page in enumerate(doc):
-                pixmap = page.get_pixmap(dpi=300)
-                imagen = Image.open(io.BytesIO(pixmap.tobytes("png")))
-                texto = pytesseract.image_to_string(imagen, lang='spa')
-                
-                done = (i == total - 1)
-                data = json.dumps({
-                    'page': i + 1,
-                    'total': total,
-                    'text': texto,
-                    'done': done
-                })
-                yield f"data: {data}\n\n"
-            
-            doc.close()
-        except Exception as e:
-            error_data = json.dumps({'error': str(e)})
-            yield f"data: {error_data}\n\n"
-    
-    return Response(
-        stream_with_context(generate()),
-        mimetype='text/event-stream',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no'
-        }
-    )
