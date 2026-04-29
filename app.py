@@ -17,6 +17,7 @@ import atexit
 app = Flask(__name__)
 # FIX HIGH: Missing SECRET_KEY causes session inconsistencies across environments
 app.secret_key = os.getenv('SECRET_KEY', 'PDFimpresistem-dev-key-2024')
+app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
 
 # Register blueprints
 app.register_blueprint(main_bp)
@@ -24,6 +25,10 @@ app.register_blueprint(basic_bp)
 app.register_blueprint(intermediate_bp)
 app.register_blueprint(advanced_bp)
 app.register_blueprint(api_bp, url_prefix='/api')
+
+@app.errorhandler(413)
+def archivo_demasiado_grande(e):
+    return 'El archivo supera el límite de 30 MB. Por favor sube un archivo más pequeño.', 413
 
 # Scheduler (unchanged)
 zona_colombia = pytz.timezone('America/Bogota')

@@ -159,7 +159,8 @@
 
             // Destroy old sortable
             if (sortable) {
-                sortable.destroy();
+                try { sortable.destroy(); } catch(e) {}
+                sortable = null;
             }
 
             // Initialize Sortable
@@ -172,7 +173,7 @@
                     onEnd: function(evt) {
                         const item = files.splice(evt.oldIndex, 1)[0];
                         files.splice(evt.newIndex, 0, item);
-                        updateThumbnailGrid();
+                        updateFilesList();
                     }
                 });
             }
@@ -192,7 +193,7 @@
             updateFilesList();
         }
 
-        function updateThumbnailGrid() {
+        async function updateThumbnailGrid() {
             if (files.length > 0) {
                 emptyState.classList.add('hidden');
             } else {
@@ -202,29 +203,33 @@
             }
 
             thumbnailGrid.innerHTML = '';
-            
-            files.forEach(async (fileObj, index) => {
+
+            for (const [index, fileObj] of files.entries()) {
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg shadow p-2';
                 card.dataset.index = index;
-                
+
                 const canvas = document.createElement('canvas');
                 canvas.width = 120;
                 canvas.height = 160;
                 canvas.className = 'w-full rounded';
-                
+
                 const nameLabel = document.createElement('p');
                 nameLabel.className = 'text-xs text-gray-600 text-center mt-2 truncate';
                 nameLabel.textContent = fileObj.name;
-                
+
+                card.appendChild(canvas);
+                card.appendChild(nameLabel);
+                thumbnailGrid.appendChild(card);
+
                 try {
                     const arrayBuffer = await fileObj.file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     const page = await pdf.getPage(1);
-                    
+
                     const viewport = page.getViewport({ scale: 0.3 });
                     canvas.height = (viewport.height / viewport.width) * 120;
-                    
+
                     await page.render({
                         canvasContext: canvas.getContext('2d'),
                         viewport: viewport
@@ -233,28 +238,32 @@
                     canvas.getContext('2d').fillStyle = '#f3f4f6';
                     canvas.getContext('2d').fillRect(0, 0, canvas.width, canvas.height);
                 }
-                
-                card.appendChild(canvas);
-                card.appendChild(nameLabel);
-                thumbnailGrid.appendChild(card);
-            });
+            }
         }
 
         pdfFilesInput.addEventListener('change', function() {
             if (!this.files || this.files.length === 0) return;
-            
-            const newFiles = Array.from(this.files);
+
+            const newFiles = Array.from(this.files).filter(f => {
+                if (f.size > 30 * 1024 * 1024) {
+                    alert(`El archivo "${f.name}" supera el límite de 30 MB y no se agregó.`);
+                    return false;
+                }
+                return true;
+            });
+            if (newFiles.length === 0) { this.value = ''; return; }
+
             files = [...files, ...newFiles.map((f, i) => ({
                 file: f,
                 id: Date.now() + i,
                 name: f.name,
                 size: f.size
             }))];
-            
+
             document.getElementById('unir_filename').textContent = `${files.length} archivos seleccionados`;
-            
+
             updateFilesList();
-            
+
             this.value = '';
         });
 

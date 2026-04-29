@@ -788,9 +788,8 @@
                             {% endif %}
                         </div>
                     </div>
-                </div>
 
-<!-- Recortar PDF -->
+                    <!-- Recortar PDF -->
                     <div id="tool-crop-pdf" class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                         <div class="p-8">
                             <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
@@ -971,7 +970,7 @@
                             Abrir editor visual
                         </a>
 
-                        {% if output_file %}
+{% if output_file %}
                             <div class="mt-4 text-center">
                                 <h2 class="text-lg font-bold text-purple-700 mb-2">PDF firmado</h2>
                                 <a href="{{ output_file }}" download class="text-blue-600 hover:underline">
@@ -1026,10 +1025,10 @@
                                 Descargar Excel
                             </a>
                         </div>
-                        {% endif %}
+{% endif %}
                     </div>
                 </div>
-<!-- Editar PDF -->
+                <!-- Editar PDF -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                     <div class="p-8">
                         <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
@@ -1048,10 +1047,8 @@
                         </a>
                     </div>
                 </div>
-
-
-
             </div>
+
         </section>
 
 
@@ -1065,6 +1062,14 @@
     </footer>
 
     <script>
+        function validarTamano(file, maxMB = 30) {
+            if (file.size > maxMB * 1024 * 1024) {
+                alert(`El archivo "${file.name}" supera el límite de ${maxMB} MB.`);
+                return false;
+            }
+            return true;
+        }
+
         let selectedFileSeparar = null;
         let selectedFileConvertir = null;
         let selectedFileRotate = null;
@@ -1142,108 +1147,181 @@
         });
 
         document.getElementById('pdf_rotate')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileRotate = event.target.files[0];
             updateFileDisplay('pdf_rotate', 'rotateFileDisplayArea', 'rotateFileName', 'rotateRemoveFileBtn',
                 selectedFileRotate);
         });
 
         document.getElementById('pdf_extract')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileExtract = event.target.files[0];
             updateFileDisplay('pdf_extract', 'extractFileDisplayArea', 'extractFileName', 'extractRemoveFileBtn',
                 selectedFileExtract);
         });
 
         document.getElementById('pdf_watermark')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileWatermark = event.target.files[0];
             updateFileDisplay('pdf_watermark', 'watermarkFileDisplayArea', 'watermarkFileName', 'watermarkRemoveFileBtn',
                 selectedFileWatermark);
         });
 
         document.getElementById('pdf_protect')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileProtect = event.target.files[0];
             updateFileDisplay('pdf_protect', 'protectFileDisplayArea', 'protectFileName', 'protectRemoveFileBtn',
                 selectedFileProtect);
         });
 
         document.getElementById('pdf_unlock')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileUnlock = event.target.files[0];
             updateFileDisplay('pdf_unlock', 'unlockFileDisplayArea', 'unlockFileName', 'unlockRemoveFileBtn',
                 selectedFileUnlock);
         });
 
         document.getElementById('pdf_flatten')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileFlatten = event.target.files[0];
             updateFileDisplay('pdf_flatten', 'flattenFileDisplayArea', 'flattenFileName', 'flattenRemoveFileBtn',
                 selectedFileFlatten);
         });
 
         document.getElementById('pdf_reorder')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileReorder = event.target.files[0];
             updateFileDisplay('pdf_reorder', 'reorderFileDisplayArea', 'reorderFileName', 'reorderRemoveFileBtn',
                 selectedFileReorder);
         });
 
         document.getElementById('pdf_organize')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileOrganize = event.target.files[0];
             updateFileDisplay('pdf_organize', 'organizeFileDisplayArea', 'organizeFileName', 'organizeRemoveFileBtn',
                 selectedFileOrganize);
         });
 
         document.getElementById('pdf_pagenumbers')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFilePageNumbers = event.target.files[0];
             updateFileDisplay('pdf_pagenumbers', 'pagenumbersFileDisplayArea', 'pagenumbersFileName', 'pagenumbersRemoveFileBtn',
                 selectedFilePageNumbers);
         });
 
         document.getElementById('pdf_crop')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileCrop = event.target.files[0];
             updateFileDisplay('pdf_crop', 'cropFileDisplayArea', 'cropFileName', 'cropRemoveFileBtn',
                 selectedFileCrop);
         });
 
         document.getElementById('pdf_compress')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileCompress = event.target.files[0];
             updateFileDisplay('pdf_compress', 'compressFileDisplayArea', 'compressFileName', 'compressRemoveFileBtn',
                 selectedFileCompress);
         });
 
         document.getElementById('pdf_to_jpg')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFilePdfToJpg = event.target.files[0];
             updateFileDisplay('pdf_to_jpg', 'pdfToJpgFileDisplayArea', 'pdfToJpgFileName', 'pdfToJpgRemoveFileBtn',
                 selectedFilePdfToJpg);
         });
 
         document.getElementById('jpg_to_pdf')?.addEventListener('change', function(event) {
-            selectedFilesJpgToPdf = Array.from(event.target.files);
+            const archivos = Array.from(event.target.files);
+            if (!archivos.every(f => validarTamano(f))) {
+                this.value = '';
+                return;
+            }
+            selectedFilesJpgToPdf = archivos;
             updateFileDisplay('jpg_to_pdf', 'jpgToPdfFileDisplayArea', 'jpgToPdfFileName', 'jpgToPdfRemoveFileBtn',
                 selectedFilesJpgToPdf, true);
         });
 
         document.getElementById('pdf_to_pdfa')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFilePdfA = event.target.files[0];
             updateFileDisplay('pdf_to_pdfa', 'pdfaFileDisplayArea', 'pdfaFileName', 'pdfaRemoveFileBtn',
                 selectedFilePdfA);
         });
 
         document.getElementById('pdf_form')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileForm = event.target.files[0];
             updateFileDisplay('pdf_form', 'formFileDisplayArea', 'formFileName', 'formRemoveFileBtn',
                 selectedFileForm);
         });
 
         document.getElementById('pdf_sign')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileSignPdf = event.target.files[0];
             updateFileDisplay('pdf_sign', 'signPdfFileDisplayArea', 'signPdfFileName', 'signPdfRemoveFileBtn',
                 selectedFileSignPdf);
         });
 
         document.getElementById('firma_sign')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileSignImage = event.target.files[0];
             updateFileDisplay('firma_sign', 'signImageFileDisplayArea', 'signImageFileName', 'signImageRemoveFileBtn',
                 selectedFileSignImage);
         });
 
         document.getElementById('pdf_repair')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
             selectedFileRepair = event.target.files[0];
             updateFileDisplay('pdf_repair', 'repairFileDisplayArea', 'repairFileName', 'repairRemoveFileBtn',
                 selectedFileRepair);
@@ -1377,6 +1455,10 @@
         // File selection listener
         fileInput.addEventListener('change', function(event) {
             if (this.files && this.files.length > 0) {
+                if (!validarTamano(this.files[0])) {
+                    this.value = '';
+                    return;
+                }
                 fileNameDisplay.textContent = this.files[0].name;
                 fileRemoveArea.classList.remove('hidden');
             }
