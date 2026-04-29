@@ -19,3 +19,9 @@ __pycache__/
 # archivos md, guias y documentacion
 *.md
 README.md
+
+#Claves y certificados
+*.key
+*.crt
+*.pem
+*.env

@@ -1,53 +1,126 @@
 # routes/main.py — Blueprint: main
 
-from flask import Blueprint, request, render_template, send_from_directory
+from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, session
 from utils import limpiar_carpeta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
+from auth import validar_token, login_required, HYDRA_LOGIN_URL
+import jwt
 import os
 
 main_bp = Blueprint('main', __name__)
 
 
+# ─── Ruta de autenticación SSO ────────────────────────────────────────────────
+@main_bp.route('/auth')
+def auth():
+    """
+    Punto de entrada del flujo SSO con Hydra IAM.
+
+    Hydra redirige aquí tras login exitoso con el JWT en la URL:
+        GET /auth?token=eyJhbGciOiJIUzI1NiJ9...
+
+    Flujo:
+        1. Extrae token del parámetro URL
+        2. Valida firma, issuer, audience y expiración
+        3. Guarda datos del usuario en la sesión Flask
+        4. Redirige al inicio SIN el token en la URL
+        5. Si hay error → redirige a Hydra para nuevo token
+    """
+    token = request.args.get('token')
+
+    if not token:
+        return redirect(HYDRA_LOGIN_URL)
+
+    try:
+        payload = validar_token(token)
+
+        session['user'] = {
+            'sub':        payload['sub'],
+            'email':      payload['email'],
+            'name':       payload['name'],
+            'roles':      payload['roles'],
+            'positionId': payload.get('positionId'),
+            'platform':   payload.get('platform'),
+        }
+        session.permanent = False
+
+        return redirect(url_for('main.index'))
+
+    except jwt.ExpiredSignatureError:
+        return redirect(HYDRA_LOGIN_URL)
+
+    except jwt.InvalidIssuerError:
+        return 'Token de emisor no autorizado.', 403
+
+    except jwt.InvalidAudienceError:
+        return 'Token no autorizado para esta plataforma.', 403
+
+    except jwt.InvalidSignatureError:
+        return 'Token con firma inválida.', 403
+
+    except jwt.DecodeError:
+        return 'Token malformado.', 400
+
+    except Exception as e:
+        print(f'[Auth] Error inesperado validando token: {e}')
+        return redirect(HYDRA_LOGIN_URL)
+
+
+# ─── Cierre de sesión SSO ─────────────────────────────────────────────────────
+@main_bp.route('/logout', methods=['POST'])
+def logout():
+    """Cierra la sesión local y redirige a Hydra."""
+    session.clear()
+    return redirect(HYDRA_LOGIN_URL)
+
+
+# ─── Rutas de UI ──────────────────────────────────────────────────────────────
+@main_bp.route('/')
+@login_required
+def index():
+    """Renderiza la página principal con todas las tarjetas de funciones."""
+    return render_template('index.html', output_file=None)
+
+
 @main_bp.route('/reorder_ui')
+@login_required
 def reorder_ui():
     """Renderiza la página de ordenar PDF."""
     return render_template('reorder.html')
 
 
 @main_bp.route('/organize_ui')
+@login_required
 def organize_ui():
     """Renderiza la página de organizar PDF."""
     return render_template('organize.html')
 
 
 @main_bp.route('/unir_ui')
+@login_required
 def unir_ui():
     """Renderiza la página de unir PDFs."""
     return render_template('unir.html')
 
 
 @main_bp.route('/crop_ui')
+@login_required
 def crop_ui():
     """Renderiza la página de crop PDF."""
     return render_template('crop.html')
 
 
 @main_bp.route('/edit_ui')
+@login_required
 def edit_ui():
     """Renderiza la página de editar PDF."""
     return render_template('edit.html')
 
 
-@main_bp.route('/')
-
-def index():
-    """Renderiza la página principal con todas las tarjetas de funciones."""
-    return render_template('index.html', output_file=None)
-
-
 @main_bp.route('/cerrar_sesion', methods=['POST'])
+@login_required
 def cerrar_sesion():
     """
     Limpieza manual de archivos activada por el usuario.
@@ -60,6 +133,7 @@ def cerrar_sesion():
 
 
 @main_bp.route('/download/<path:filename>')
+@login_required
 def download_file(filename):
     """
     Sirve un archivo desde la carpeta /outputs para descarga.
@@ -74,13 +148,10 @@ def download_file(filename):
 
 
 @main_bp.route('/convert', methods=['POST'])
+@login_required
 def convert():
     """
     Convierte un PDF a formato Word (.docx) usando pdf2docx.
-
-    Esta ruta existía antes del desarrollo del proyecto actual y se mantiene
-    por compatibilidad. Usa la librería pdf2docx que intenta preservar
-    el formato del documento original.
 
     Parámetros del formulario:
         pdf_file (file): Archivo PDF a convertir.
