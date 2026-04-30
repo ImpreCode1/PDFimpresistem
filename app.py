@@ -21,6 +21,11 @@ app.secret_key = os.getenv('SECRET_KEY', 'PDFimpresistem-dev-key-2024')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_PERMANENT'] = True
 app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
+app.config['SESSION_COOKIE_NAME'] = 'pdf_session'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
 
 # Register blueprints
 app.register_blueprint(main_bp)

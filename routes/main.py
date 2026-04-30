@@ -101,6 +101,12 @@ def index():
     return render_template('index.html', output_file=None)
 
 
+@main_bp.route('/index')
+def index_alt():
+    """Redirect /index to / for consistency."""
+    return redirect(url_for('main.index'))
+
+
 @main_bp.route('/reorder_ui')
 @login_required
 def reorder_ui():
