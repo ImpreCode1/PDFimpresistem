@@ -13,6 +13,14 @@ from datetime import datetime, timedelta
 main_bp = Blueprint('main', __name__)
 
 
+# ─── Ruta para servir el logo ─────────────────────────────────────────────
+@main_bp.route('/logos/<path:filename>')
+def serve_logo(filename):
+    """Sirve imágenes de la raíz del proyecto."""
+    from config import BASE_DIR
+    return send_from_directory(BASE_DIR, filename)
+
+
 # ─── Ruta de autenticación SSO ────────────────────────────────────────────────
 @main_bp.route('/auth')
 def auth():
