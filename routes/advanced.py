@@ -15,7 +15,6 @@ import pytesseract
 from PIL import Image
 import difflib
 
-
 advanced_bp = Blueprint('advanced', __name__)
 
 

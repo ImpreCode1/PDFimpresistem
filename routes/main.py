@@ -5,9 +5,10 @@ from utils import limpiar_carpeta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
-from auth import validar_token, login_required, HYDRA_LOGIN_URL
+from auth import login_required, HYDRA_LOGIN_URL, validar_token, JWT_SECRET
 import jwt
 import os
+from datetime import datetime, timedelta
 
 main_bp = Blueprint('main', __name__)
 
@@ -30,19 +31,35 @@ def auth():
     """
     token = request.args.get('token')
 
+    # Modo desarrollo: auto-generar token si no existe
     if not token:
-        return redirect(HYDRA_LOGIN_URL)
+        if os.getenv('FLASK_ENV') == 'development' or os.getenv('DEBUG') == '1':
+            payload = {
+                'sub': 'dev-user',
+                'email': 'dev@impresistem.com',
+                'name': 'Desarrollador',
+                'roles': ['admin'],
+                'positionId': '1',
+                'platform': 'pdf',
+                'iss': 'hydra-iam',
+                'aud': 'internal-platforms',
+                'iat': datetime.utcnow(),
+                'exp': datetime.utcnow() + timedelta(minutes=15)
+            }
+            token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+        else:
+            return redirect(HYDRA_LOGIN_URL)
 
     try:
         payload = validar_token(token)
 
         session['user'] = {
-            'sub':        payload['sub'],
-            'email':      payload['email'],
-            'name':       payload['name'],
-            'roles':      payload['roles'],
+            'sub': payload['sub'],
+            'email': payload['email'],
+            'name': payload['name'],
+            'roles': payload['roles'],
             'positionId': payload.get('positionId'),
-            'platform':   payload.get('platform'),
+            'platform': payload.get('platform'),
         }
         session.permanent = True
 
