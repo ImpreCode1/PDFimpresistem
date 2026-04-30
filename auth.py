@@ -9,6 +9,13 @@ from flask import request, redirect, session
 # JWT_SECRET debe coincidir exactamente con el secreto de Hydra IAM
 # En producción: usar variable de entorno, NUNCA hardcodeado en el código
 JWT_SECRET = os.getenv('JWT_SECRET', 'super_secret_key')
+if not os.getenv('JWT_SECRET'):
+    import warnings
+    warnings.warn(
+        "[auth] JWT_SECRET no está en variables de entorno. "
+        "Usando valor por defecto — NO apto para producción.",
+        stacklevel=1
+    )
 JWT_ALGORITHM = 'HS256'
 JWT_ISSUER = 'hydra-iam'
 JWT_AUDIENCE = 'internal-platforms'

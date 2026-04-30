@@ -4,6 +4,7 @@ from flask import Blueprint, request, render_template, send_file
 from utils import parsear_paginas
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
+from auth import login_required
 import fitz
 import pikepdf
 import io
@@ -14,6 +15,7 @@ intermediate_bp = Blueprint('intermediate', __name__)
 
 
 @intermediate_bp.route('/reorder', methods=['POST'])
+@login_required
 def reorder_pdf():
     """
     Reorganiza las páginas de un PDF en el orden indicado por el usuario.
@@ -75,6 +77,7 @@ def reorder_pdf():
 
 
 @intermediate_bp.route('/organize', methods=['POST'])
+@login_required
 def organize_pdf():
     """
     Elimina páginas específicas de un PDF.
@@ -138,6 +141,7 @@ def organize_pdf():
 
 
 @intermediate_bp.route('/page_numbers', methods=['POST'])
+@login_required
 def page_numbers_pdf():
     """
     Inserta numeración automática en el pie de cada página del PDF.
@@ -206,6 +210,7 @@ def page_numbers_pdf():
 
 
 @intermediate_bp.route('/compress', methods=['POST'])
+@login_required
 def compress_pdf():
     """
     Reduce el tamaño en disco de un PDF optimizando su estructura interna.
@@ -263,6 +268,7 @@ def compress_pdf():
 
 
 @intermediate_bp.route('/pdf_to_jpg', methods=['POST'])
+@login_required
 def pdf_to_jpg():
     """
     Convierte cada página del PDF en una imagen y las empaqueta en un ZIP.
@@ -332,6 +338,7 @@ def pdf_to_jpg():
 
 
 @intermediate_bp.route('/jpg_to_pdf', methods=['POST'])
+@login_required
 def jpg_to_pdf():
     """
     Convierte una o varias imágenes JPG/PNG en un único PDF.
@@ -394,6 +401,7 @@ def jpg_to_pdf():
 
 
 @intermediate_bp.route('/repair', methods=['POST'])
+@login_required
 def repair_pdf():
     """
     Intenta recuperar un PDF dañado o corrupto.
@@ -447,6 +455,7 @@ def repair_pdf():
 
 
 @intermediate_bp.route('/crop', methods=['POST'])
+@login_required
 def crop_pdf():
     """
     Recorta los márgenes de todas las páginas de un PDF.
@@ -519,6 +528,7 @@ def crop_pdf():
 
 
 @intermediate_bp.route('/pdf_to_pdfa', methods=['POST'])
+@login_required
 def pdf_to_pdfa():
     """
     Convierte un PDF al formato PDF/A-2B (ISO 19005-2, nivel básico).

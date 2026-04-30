@@ -1,6 +1,7 @@
 # routes/api.py — Blueprint: api
 
 from flask import Blueprint, request, jsonify, Response, stream_with_context
+from auth import login_required
 import fitz
 import io
 import base64
@@ -24,6 +25,7 @@ def add_cors_headers(response):
 
 
 @api_bp.route('/page_preview', methods=['POST', 'OPTIONS'])
+@login_required
 def page_preview():
     """
     Returns a PNG preview of a specific PDF page as base64.
@@ -71,6 +73,7 @@ def page_preview():
 
 
 @api_bp.route('/save_signature', methods=['POST', 'OPTIONS'])
+@login_required
 def save_signature():
     """
     Saves a signature image from base64 to a temp file.
@@ -104,6 +107,7 @@ def save_signature():
 
 
 @api_bp.route('/thumbnails', methods=['POST', 'OPTIONS'])
+@login_required
 def thumbnails():
     """
     Returns thumbnails for all pages of a PDF as base64 array.
@@ -146,6 +150,7 @@ def thumbnails():
 
 
 @api_bp.route('/page_preview_by_name', methods=['POST', 'OPTIONS'])
+@login_required
 def page_preview_by_name():
     """
     Returns a PNG preview of a specific PDF page by filename.

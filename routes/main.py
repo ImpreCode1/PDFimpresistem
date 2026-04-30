@@ -44,7 +44,7 @@ def auth():
             'positionId': payload.get('positionId'),
             'platform':   payload.get('platform'),
         }
-        session.permanent = False
+        session.permanent = True
 
         return redirect(url_for('main.index'))
 

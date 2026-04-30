@@ -4,6 +4,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, send_f
 from werkzeug.utils import secure_filename
 from utils import parsear_paginas, hex_a_rgb
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
+from auth import login_required
 import fitz
 import os
 import io
@@ -19,12 +20,14 @@ advanced_bp = Blueprint('advanced', __name__)
 
 
 @advanced_bp.route('/sign_ui')
+@login_required
 def sign_ui():
     """Renderiza la interfaz interactiva para firmar PDFs."""
     return render_template('sign.html')
 
 
 @advanced_bp.route('/form_filler', methods=['POST'])
+@login_required
 def form_filler():
     """
     Paso 1 del rellenador de formularios: detecta los campos del PDF.
@@ -101,6 +104,7 @@ def form_filler():
 
 
 @advanced_bp.route('/form_filler/guardar', methods=['POST'])
+@login_required
 def form_filler_guardar():
     """
     Paso 2 del rellenador de formularios: escribe los valores en el PDF.
@@ -159,6 +163,7 @@ def form_filler_guardar():
 
 
 @advanced_bp.route('/sign', methods=['POST'])
+@login_required
 def sign_pdf():
     """
     Inserta una imagen de firma en una página específica del PDF.
@@ -246,6 +251,7 @@ def sign_pdf():
 
 
 @advanced_bp.route('/pdf_to_excel', methods=['POST'])
+@login_required
 def pdf_to_excel():
     """
     Extrae todas las tablas de un PDF y las exporta a un archivo Excel.
@@ -313,6 +319,7 @@ def pdf_to_excel():
 
 
 @advanced_bp.route('/edit', methods=['POST'])
+@login_required
 def edit_pdf():
     """
     Agrega texto en una posición específica de una página del PDF.

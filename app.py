@@ -2,6 +2,7 @@
 
 from flask import Flask
 import os
+from datetime import timedelta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from utils import limpiar_archivos_programada
 from routes.main import main_bp
@@ -17,6 +18,8 @@ import atexit
 app = Flask(__name__)
 # FIX HIGH: Missing SECRET_KEY causes session inconsistencies across environments
 app.secret_key = os.getenv('SECRET_KEY', 'PDFimpresistem-dev-key-2024')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
+app.config['SESSION_PERMANENT'] = True
 app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
 
 # Register blueprints
