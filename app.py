@@ -1,56 +1,54 @@
-from flask import Flask, request, render_template, send_from_directory
-from pdf2docx import Converter
+# app.py — slim version after refactor
+
+from flask import Flask
 import os
+from datetime import timedelta
+from config import UPLOAD_FOLDER, OUTPUT_FOLDER
+from utils import limpiar_archivos_programada
+from routes.main import main_bp
+from routes.basic import basic_bp
+from routes.intermediate import intermediate_bp
+from routes.advanced import advanced_bp
+from routes.api import api_bp
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
+import atexit
 
 app = Flask(__name__)
+# FIX HIGH: Missing SECRET_KEY causes session inconsistencies across environments
+app.secret_key = os.getenv('SECRET_KEY', 'PDFimpresistem-dev-key-2024')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
+app.config['SESSION_PERMANENT'] = True
+app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
+app.config['SESSION_COOKIE_NAME'] = 'pdf_session'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
 
-# Directorio donde se guardarán los archivos cargados y convertidos
-UPLOAD_FOLDER = '/var/www/html/PDFimpresistem/uploads'
-OUTPUT_FOLDER = '/var/www/html/PDFimpresistem/outputs'
+# Register blueprints
+app.register_blueprint(main_bp)
+app.register_blueprint(basic_bp)
+app.register_blueprint(intermediate_bp)
+app.register_blueprint(advanced_bp)
+app.register_blueprint(api_bp, url_prefix='/api')
 
-# Crear los directorios si no existen
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+@app.errorhandler(413)
+def archivo_demasiado_grande(e):
+    return 'El archivo supera el límite de 30 MB. Por favor sube un archivo más pequeño.', 413
 
-@app.route('/')
-def index():
-    return render_template('index.html', output_file=None)
+# Scheduler (unchanged)
+zona_colombia = pytz.timezone('America/Bogota')
+scheduler = BackgroundScheduler(timezone=zona_colombia)
+scheduler.add_job(
+    limpiar_archivos_programada,
+    CronTrigger(hour=19, minute=0, timezone=zona_colombia)
+)
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown(wait=False))
 
-@app.route('/convert', methods=['POST'])
-def convert():
-    # Verificar si el archivo fue cargado
-    if 'pdf_file' not in request.files:
-        return 'No se ha seleccionado un archivo.', 400
+application = app  # mod_wsgi
 
-    file = request.files['pdf_file']
-    
-    # Verificar que el archivo sea un PDF
-    if file.filename == '' or not file.filename.endswith('.pdf'):
-        return 'Por favor, suba un archivo PDF.', 400
-
-    # Guardar el archivo PDF cargado
-    pdf_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(pdf_path)
-
-    # Crear el nombre del archivo de salida
-    output_filename = file.filename.rsplit('.', 1)[0] + '.docx'
-    word_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-    # Realizar la conversión de PDF a Word
-    cv = Converter(pdf_path)
-    cv.convert(word_path, start=0, end=None)
-    cv.close()
-
-    # Proveer el enlace para descargar el archivo Word convertido
-    output_file_url = f'/download/{output_filename}'
-    return render_template('index.html', output_file=output_file_url)
-
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_from_directory(OUTPUT_FOLDER, filename)
-# Aquí es donde asignas la variable `application` para que mod_wsgi la encuentre
-application = app  # Asigna 'app' a 'application'
-
-# Si estás ejecutando localmente, puedes usar esto para pruebas en desarrollo:
 # if __name__ == '__main__':
 #     app.run(host='0.0.0.0', port=8080, debug=True)

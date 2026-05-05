@@ -1,5 +1,6 @@
 # Entorno virtual
 .venv/
+venv/
 
 # Archivos de usuario
 uploads/
@@ -14,3 +15,13 @@ __pycache__/
 
 # Otros
 *.log
+
+# archivos md, guias y documentacion
+*.md
+README.md
+
+#Claves y certificados
+*.key
+*.crt
+*.pem
+*.env
