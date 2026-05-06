@@ -194,7 +194,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Unir PDFs</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Combina múltiples PDFs en uno</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Combina múltiples archivos PDF en un solo documento. Arrastra y ordena los archivos como prefieras antes de unirlos. Ideal para consolidar reportes, contratos o presentaciones.</p>
                         </div>
                     </div>
                     <a href="/unir_ui" class="btn-primary">Abrir interfaz interactiva</a>
@@ -210,7 +210,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Separar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Divide tu PDF en múltiples archivos</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Extrae páginas específicas de tu PDF y guárdalas como archivos separados. Selecciona las páginas que necesitas usando números o rangos. Perfecto para dividir documentos grandes.</p>
                         </div>
                     </div>
                     <div style="border: 2px dashed var(--color-border); border-radius: 12px; padding: 16px; text-align: center; transition: border-color 0.2s;" id="separarPdfArea">
@@ -240,7 +240,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Convertir a PowerPoint</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Transforma PDF en presentación</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte tu documento PDF en una presentación de PowerPoint editable. Cada página del PDF se convierte en una diapositiva. Ideal para复用 contenido en reuniones.</p>
                         </div>
                     </div>
                     <div style="border: 2px dashed var(--color-border); border-radius: 12px; padding: 16px; text-align: center; transition: border-color 0.2s;" id="convertirPptArea">
@@ -269,7 +269,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Convertir a Word</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Transforma PDF en documento Word</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte tu PDF en un documento Word editable conservando el formato original. Acepta archivos PDF con texto y imágenes. Perfecto para editar contratos y documentos.</p>
                         </div>
                     </div>
                     <form action="/convert" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -305,7 +305,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Rotar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Corrige orientación de páginas</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Gira las páginas de tu PDF 90°, 180° o 270° según tus necesidades. Corrige documentos escaneados o fotos tomadas en orientación incorrecta. Procesa todo el documento a la vez.</p>
                         </div>
                     </div>
                     <form action="/rotate" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -347,7 +347,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Extraer páginas</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Extrae páginas específicas</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Selecciona las páginas que necesitas y crea un nuevo PDF solo con ellas. Puedes usar números individuales, rangos o combinaciones. Ideal para extraer capítulos o secciones.</p>
                         </div>
                     </div>
                     <form action="/extract" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -385,7 +385,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Marca de agua</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Agrega texto semitransparente</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Añade un texto semitransparente como marca de agua sobre todas las páginas. Usa opciones como "CONFIDENTIAL" o "BORRADOR" para proteger documentos. Personaliza la posición y opacidad.</p>
                         </div>
                     </div>
                     <form action="/watermark" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -423,7 +423,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Proteger PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Agrega contraseña</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Protege tu PDF con una contraseña segura. Requiere contraseña para abrir o modificar el documento. Evita que personas no autorizadas accedan a información sensible.</p>
                         </div>
                     </div>
                     <form action="/protect" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -462,7 +462,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Desbloquear PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Elimina contraseña</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Elimina la protección por contraseña de archivos PDF bloqueados. Solo funciona si conoces la contraseña actual del documento. Útil para quitar restricciones de documentos propios.</p>
                         </div>
                     </div>
                     <form action="/unlock" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -500,7 +500,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Aplanar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte formularios en estático</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte campos de formulario interactivos en texto plano no editable. Elimina la capacidad de modificar datos pero asegura compatibilidad universal. Perfecto para enviar formularios firmados.</p>
                         </div>
                     </div>
                     <form action="/flatten" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -537,7 +537,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Ordenar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Reorganiza las páginas</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Arrastra y suelta las páginas para reordenar tu documento PDF. Visualiza miniaturas de cada página y crea el orden perfecto. Ideal para reorganizar contratos o reportes.</p>
                         </div>
                     </div>
                     <a href="/reorder_ui" class="btn-primary">Abrir interfaz interactiva</a>
@@ -553,7 +553,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Organizar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Elimina páginas específicas</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Selecciona y elimina las páginas que no necesitas de tu PDF. Elige una o varias páginas a eliminar visualmente. Perfecto para quitar páginas en blanco o secciones no deseadas.</p>
                         </div>
                     </div>
                     <a href="/organize_ui" class="btn-primary">Abrir interfaz interactiva</a>
@@ -569,7 +569,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Números de página</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Agrega numeración automática</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Inserta números de página automáticamente en todas las páginas. Elige la posición (centro, izquierda o derecha) y el estilo. Facilita la navegación en documentos extensos.</p>
                         </div>
                     </div>
                     <form action="/page_numbers" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -611,7 +611,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Comprimir PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Reduce el tamaño del archivo</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Comprime tu PDF manteniendo la mayor calidad posible. Reduce el tamaño para compartir por email o guardar espacio. El proceso optimiza imágenes y elimina datos redundantes.</p>
                         </div>
                     </div>
                     <form action="/compress" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -653,7 +653,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">PDF a PNG/JPG</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte cada página en imagen</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Transforma cada página de tu PDF en una imagen PNG o JPG. Elige la resolución (72, 150 o 300 DPI) según tu besoin. Perfecto para extraer imágenes o crear previsualizaciones.</p>
                         </div>
                     </div>
                     <form action="/pdf_to_jpg" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -693,7 +693,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">JPG a PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte imágenes a PDF</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Combina varias imágenes JPG o PNG en un único documento PDF. Arrastra múltiples archivos y se creará un PDF con una página por imagen. Ideal para digitalizar documentos físicos.</p>
                         </div>
                     </div>
                     <form action="/jpg_to_pdf" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -730,7 +730,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Recortar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Elimina márgenes</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Recorta los márgenes blancos alrededor del contenido de cada página. Ajusta visualmente el área de visualización. Ideal para documentos escaneados con bordes grandes.</p>
                         </div>
                     </div>
                     <a href="/crop_ui" class="btn-primary">Abrir interfaz interactiva</a>
@@ -747,7 +747,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Reparar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Recupera PDF dañado</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Intenta reparar archivos PDF corruptos o que no se abren correctamente. Recupera el contenido legible posible del documento. Útil cuando un archivo se ha dañado por transferencia.</p>
                         </div>
                     </div>
                     <form action="/repair" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -784,7 +784,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">PDF a PDF/A</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Formato de archivado</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte tu PDF al estándar PDF/A-2B para archivado a largo plazo. Garantiza que el documento se mantenga legible por décadas. Cumple con la norma ISO 19005-2.</p>
                         </div>
                     </div>
                     <form action="/pdf_to_pdfa" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -825,7 +825,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Rellenar formularios</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Detecta y rellena campos</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Detecta automáticamente los campos interactivos de un formulario PDF. Rellena los campos con los datos que proporciones. Acelera el proceso de completar solicitudes o encuestas.</p>
                         </div>
                     </div>
                     <form action="/form_filler" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
@@ -856,7 +856,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Firmar PDF</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Inserta tu firma</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Añade tu firma manuscrita o digital al documento PDF. Arrastra la firma a la posición deseada y ajústala al tamaño. Perfecto para firmar contratos y documentos oficiales.</p>
                         </div>
                     </div>
                     <a href="/sign_ui" class="btn-primary">Abrir editor visual</a>
@@ -878,7 +878,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">PDF a Excel</h3>
-                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Extrae tablas a Excel</p>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Detecta y extrae las tablas contenidas en tu PDF hacia un archivo Excel. Cada tabla se exporta en una hoja separada. Ideal para analizar datos de reportes o facturas.</p>
                         </div>
                     </div>
                     <form action="/pdf_to_excel" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
