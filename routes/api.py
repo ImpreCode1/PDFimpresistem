@@ -17,7 +17,15 @@ api_bp = Blueprint('api', __name__)
 # FIX HIGH: Add CORS headers for cross-origin requests from interactive views
 @api_bp.after_request
 def add_cors_headers(response):
-    """Add CORS headers for cross-origin requests."""
+    """
+    Añade headers CORS para solicitudes de origen cruzado.
+
+    Args:
+        response (Response): Objeto response de Flask.
+
+    Returns:
+        Response: Objeto response con headers CORS añadidos.
+    """
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
@@ -28,14 +36,17 @@ def add_cors_headers(response):
 @login_required
 def page_preview():
     """
-    Returns a PNG preview of a specific PDF page as base64.
-    
-    Request:
-        pdf_file (file): The PDF file.
-        pagina (int): Page number (base 1).
-    
-    Response:
-        JSON with {image: "data:image/png;base64,..."}
+    Retorna una vista previa PNG de una página específica del PDF en base64.
+
+    Args:
+        pdf_file (file): Archivo PDF enviado en el request.
+        pagina (int): Número de página (base 1). Por defecto: 1.
+
+    Returns:
+        JSON: {'image': 'data:image/png;base64,...'}
+
+    Raises:
+        400: Si no se selecciona archivo o página fuera de rango.
     """
     if 'pdf_file' not in request.files:
         return jsonify({'error': 'No se ha seleccionado un archivo'}), 400
@@ -76,13 +87,16 @@ def page_preview():
 @login_required
 def save_signature():
     """
-    Saves a signature image from base64 to a temp file.
-    
-    Request:
-        JSON { signature_base64: "data:image/png;base64,..." }
-    
-    Response:
-        JSON { filename: "firma_temp_abc123.png" }
+    Guarda una imagen de firma desde base64 en un archivo temporal.
+
+    Args:
+        signature_base64 (str): Imagen en formato data URL base64.
+
+    Returns:
+        JSON: {'filename': 'firma_temp_abc123.png'}
+
+    Raises:
+        400: Si no se recibe la firma o el base64 es inválido.
     """
     data = request.get_json()
     if not data or 'signature_base64' not in data:
@@ -110,14 +124,17 @@ def save_signature():
 @login_required
 def thumbnails():
     """
-    Returns thumbnails for all pages of a PDF as base64 array.
-    
-    Request:
-        pdf_file (file): The PDF file.
-        dpi (int): Thumbnail resolution. Default: 72.
-    
-    Response:
-        JSON { thumbnails: ["data:image/png;base64,...", ...] }
+    Retorna miniaturas de todas las páginas de un PDF como array base64.
+
+    Args:
+        pdf_file (file): Archivo PDF enviado en el request.
+        dpi (int): Resolución de las miniaturas. Por defecto: 72.
+
+    Returns:
+        JSON: {'thumbnails': ['data:image/png;base64,...', ...]}
+
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return jsonify({'error': 'No se ha seleccionado un archivo'}), 400
@@ -153,14 +170,17 @@ def thumbnails():
 @login_required
 def page_preview_by_name():
     """
-    Returns a PNG preview of a specific PDF page by filename.
-    
-    Request:
-        pdf_nombre (str): Name of the PDF file in UPLOAD_FOLDER.
-        pagina (int): Page number (base 1).
-    
-    Response:
-        JSON with {image: "data:image/png;base64,..."}
+    Retorna una vista previa PNG de una página específica del PDF por nombre de archivo.
+
+    Args:
+        pdf_nombre (str): Nombre del archivo PDF en UPLOAD_FOLDER.
+        pagina (int): Número de página (base 1). Por defecto: 1.
+
+    Returns:
+        JSON: {'image': 'data:image/png;base64,...'}
+
+    Raises:
+        400: Si no se proporciona nombre, archivo no existe o página fuera de rango.
     """
     from config import UPLOAD_FOLDER
     

@@ -21,7 +21,12 @@ advanced_bp = Blueprint('advanced', __name__)
 @advanced_bp.route('/sign_ui')
 @login_required
 def sign_ui():
-    """Renderiza la interfaz interactiva para firmar PDFs."""
+    """
+    Renderiza la interfaz interactiva para firmar PDFs.
+
+    Returns:
+        Response: Template sign.html.
+    """
     return render_template('sign.html')
 
 
@@ -29,29 +34,16 @@ def sign_ui():
 @login_required
 def form_filler():
     """
-    Paso 1 del rellenador de formularios: detecta los campos del PDF.
+    Detecta los campos de un PDF con formulario interactivo.
 
-    Lee todos los widgets (campos interactivos) del PDF y los pasa
-    al template form_filler.html donde el usuario los puede llenar.
-    El nombre del archivo se pasa como campo oculto para el paso 2.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): PDF con formulario interactivo.
 
     Returns:
         Response: Template form_filler.html con los campos detectados.
 
-    Tipos de campo soportados:
-        PDF_WIDGET_TYPE_TEXT: campos de texto
-        PDF_WIDGET_TYPE_CHECKBOX: casillas de verificación
-        PDF_WIDGET_TYPE_LISTBOX: listas desplegables
-    
-    Cada campo incluye:
-        - nombre: nombre del campo
-        - tipo: tipo de widget
-        - valor_actual: valor actual del campo
-        - pagina: número de página (base 0)
-        - rect: diccionario con coordenadas del campo (x0, y0, x1, y1, page_width, page_height)
+    Raises:
+        400: Si no se selecciona archivo o no hay campos de formulario.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -106,22 +98,17 @@ def form_filler():
 @login_required
 def form_filler_guardar():
     """
-    Paso 2 del rellenador de formularios: escribe los valores en el PDF.
+    Guarda los valores ingresados en los campos del formulario del PDF.
 
-    Recibe el nombre del archivo original (pasado como campo oculto desde
-    form_filler.html) y los valores de cada campo del formulario.
-    Escribe cada valor en su campo correspondiente y guarda el resultado.
-
-    Parámetros del formulario:
-        pdf_nombre (str): Nombre del PDF original en /uploads.
-        [campo_name] (str/on): Valor de cada campo del formulario.
+    Args:
+        pdf_nombre (str): Nombre del PDF original.
+        [campo_name] (str): Valor de cada campo del formulario.
 
     Returns:
         Response: Template con enlace al PDF rellenado.
 
-    Validaciones:
-        - pdf_nombre vacío -> 400
-        - Archivo original no encontrado en /uploads -> 400
+    Raises:
+        400: Si no se encuentra el archivo original.
     """
     pdf_nombre = request.form.get('pdf_nombre', '')
 
@@ -167,21 +154,20 @@ def sign_pdf():
     """
     Inserta una imagen de firma en una página específica del PDF.
 
-    La firma no es criptográfica — es una imagen visible insertada en
-    el área que el usuario defina. La posición y tamaño se expresan
-    como porcentaje de las dimensiones de la página.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): PDF a firmar.
         firma_file (file): Imagen de la firma (JPG o PNG).
         pagina (int): Número de página (base 1). Por defecto: 1.
-        pos_x (int): Posición horizontal en % (0-90). Por defecto: 60.
-        pos_y (int): Posición vertical en % (0-90). Por defecto: 80.
-        firma_ancho (int): Ancho de la firma en % (5-50). Por defecto: 30.
-        firma_alto (int): Alto de la firma en % (5-30). Por defecto: 10.
+        pos_x (int): Posición horizontal (0-90%). Por defecto: 60.
+        pos_y (int): Posición vertical (0-90%). Por defecto: 80.
+        firma_ancho (int): Ancho de la firma (5-50%). Por defecto: 30.
+        firma_alto (int): Alto de la firma (5-30%). Por defecto: 10.
 
     Returns:
-        Response: Template con enlace al PDF firmado.
+        Response: Archivo PDF firmado descargable.
+
+    Raises:
+        400: Si no se selecciona archivo o formato inválido.
     """
     if 'pdf_file' not in request.files or 'firma_file' not in request.files:
         return 'Por favor, sube el PDF y la imagen de tu firma.', 400
@@ -255,19 +241,14 @@ def pdf_to_excel():
     """
     Extrae todas las tablas de un PDF y las exporta a un archivo Excel.
 
-    Cada tabla encontrada se escribe en una hoja separada. El nombre de
-    cada hoja indica la página y número de tabla de origen (ej: Pag1_Tabla2).
-    Las celdas vacías (None) se convierten a string vacío para evitar
-    corrupción del archivo Excel.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): PDF con tablas a extraer.
 
     Returns:
-        Response: Template con enlace al archivo Excel generado.
+        Response: Template con enlace al archivo Excel.
 
-    Validaciones:
-        - PDF sin tablas detectables -> 400
+    Raises:
+        400: Si no se selecciona archivo o no se encuentran tablas.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -323,27 +304,23 @@ def edit_pdf():
     """
     Agrega texto en una posición específica de una página del PDF.
 
-    Soporta dos modos:
-    1. Modo legacy (backward compatible): un solo texto con campos individuales
-    2. Modo nuevo: JSON array de anotaciones via 'anotaciones' field
+    Soporta modo legacy (un solo texto) o modo JSON (múltiples anotaciones).
 
-    Parámetros del formulario (legacy):
+    Args:
         pdf_file (file): PDF a editar.
-        texto (str): Texto a insertar.
+        texto (str): Texto a insertar (modo legacy).
         pagina (int): Número de página (base 1). Por defecto: 1.
-        pos_x (int): Posición horizontal en % (0-95). Por defecto: 10.
-        pos_y (int): Posición vertical en % (0-95). Por defecto: 50.
-        fontsize (int): Tamaño de fuente en puntos (6-72). Por defecto: 12.
-        color (str): Color del texto en hex. Por defecto: '#000000'.
-
-    Parámetros del formulario (nuevo):
-        pdf_file (file): PDF a editar.
-        anotaciones (str): JSON array de anotaciones:
-            [{"pagina": 1, "texto": "...", "pos_x": 10, "pos_y": 50, 
-              "fontsize": 12, "color": "#ff0000"}, ...]
+        pos_x (int): Posición horizontal (0-95%). Por defecto: 10.
+        pos_y (int): Posición vertical (0-95%). Por defecto: 50.
+        fontsize (int): Tamaño de fuente (6-72). Por defecto: 12.
+        color (str): Color en hex. Por defecto: '#000000'.
+        anotaciones (str): JSON array de anotaciones (modo nuevo).
 
     Returns:
         Response: Template con enlace al PDF editado.
+
+    Raises:
+        400: Si no se selecciona archivo o datos inválidos.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400

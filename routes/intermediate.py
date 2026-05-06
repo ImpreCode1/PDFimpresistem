@@ -20,20 +20,15 @@ def reorder_pdf():
     """
     Reorganiza las páginas de un PDF en el orden indicado por el usuario.
 
-    A diferencia de extract_pages(), requiere que estén TODAS las páginas
-    del documento exactamente una vez. Usa doc.select() que es más eficiente
-    que crear un documento nuevo.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a reordenar.
-        paginas (str): Nuevo orden de páginas. Ej: '3,1,2' para un PDF de 3 páginas.
+        paginas (str): Nuevo orden de páginas (ej: '3,1,2').
 
     Returns:
         Response: Template con enlace al PDF reordenado.
 
-    Validaciones:
-        - Páginas repetidas -> 400 (detectado por len != total)
-        - Páginas faltantes -> 400 (detectado por sorted != range)
+    Raises:
+        400: Si hay páginas repetidas o faltantes.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -82,20 +77,15 @@ def organize_pdf():
     """
     Elimina páginas específicas de un PDF.
 
-    Lógica inversa a extract_pages(): el usuario indica qué páginas ELIMINAR
-    en vez de cuáles conservar. Se construye la lista de páginas a conservar
-    como el complemento de las páginas a eliminar.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a organizar.
-        paginas (str): Páginas a eliminar. Ej: '2,5,8' o '3-6'.
+        paginas (str): Páginas a eliminar (ej: '2,5,8' o '3-6').
 
     Returns:
         Response: Template con enlace al PDF organizado.
 
-    Validaciones:
-        - Intento de eliminar todas las páginas -> 400
-        - Páginas fuera de rango -> se ignoran silenciosamente
+    Raises:
+        400: Si se intenta eliminar todas las páginas.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -146,16 +136,15 @@ def page_numbers_pdf():
     """
     Inserta numeración automática en el pie de cada página del PDF.
 
-    El texto tiene el formato 'Página X de Y'. La posición horizontal
-    se compensa con un offset porque insert_text() dibuja desde el punto
-    hacia la derecha, no centrado en él.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a numerar.
-        posicion (str): 'centro', 'derecha' o 'izquierda'. Por defecto: 'centro'.
+        posicion (str): Posición del número ('centro', 'derecha', 'izquierda').
 
     Returns:
         Response: Template con enlace al PDF numerado.
+
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -213,22 +202,16 @@ def page_numbers_pdf():
 @login_required
 def compress_pdf():
     """
-    Reduce el tamaño en disco de un PDF optimizando su estructura interna.
+    Reduce el tamaño de un PDF optimizando su estructura interna.
 
-    Calcula el ahorro en porcentaje comparando tamaños antes y después.
-    Si el archivo ya estaba optimizado, el ahorro puede ser 0% o negativo
-    (en cuyo caso se muestra 0% para no confundir al usuario).
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a comprimir.
 
     Returns:
         Response: Template con enlace al PDF comprimido y porcentaje de ahorro.
 
-    Parámetros de save():
-        garbage=4: limpieza máxima de recursos duplicados y no usados
-        deflate=True: compresión de streams de contenido
-        clean=True: optimización de la estructura interna
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -271,19 +254,18 @@ def compress_pdf():
 @login_required
 def pdf_to_jpg():
     """
-    Convierte cada página del PDF en una imagen y las empaqueta en un ZIP.
+    Convierte cada página de un PDF en imagen y las empaqueta en un ZIP.
 
-    Usa BytesIO para crear el ZIP en memoria sin escribir archivos temporales
-    en disco. El resultado se envía directamente con send_file() sin recargar
-    la página (no usa render_template).
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a convertir.
-        dpi (str): Resolución de las imágenes. Opciones: 72, 150, 300. Por defecto: 150.
-        image_format (str): Formato de salida. 'jpg' o 'png'. Por defecto: 'png'.
+        dpi (int): Resolución (72, 150 o 300). Por defecto: 150.
+        image_format (str): Formato de salida ('jpg' o 'png'). Por defecto: 'png'.
 
     Returns:
         Response: Archivo ZIP descargable con las imágenes.
+
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -343,19 +325,14 @@ def jpg_to_pdf():
     """
     Convierte una o varias imágenes JPG/PNG en un único PDF.
 
-    Usa request.files.getlist() para recibir múltiples archivos. Crea cada
-    página del tamaño exacto de la imagen leyendo sus dimensiones con fitz
-    antes de insertarla, evitando distorsión o bordes blancos.
-
-    Parámetros del formulario:
+    Args:
         imagenes (file[]): Una o varias imágenes JPG o PNG.
 
     Returns:
         Response: Template con enlace al PDF generado.
 
-    Validaciones:
-        - Sin archivos -> 400
-        - Formato no soportado -> 400 indicando el archivo específico
+    Raises:
+        400: Si no se seleccionan imágenes o el formato no es soportado.
     """
     if 'imagenes' not in request.files:
         return 'No se han seleccionado imágenes.', 400
@@ -406,21 +383,14 @@ def repair_pdf():
     """
     Intenta recuperar un PDF dañado o corrupto.
 
-    PyMuPDF repara automáticamente errores estructurales al abrir el archivo.
-    Se fuerza la lectura completa de cada página para que el motor detecte
-    y corrija todos los errores antes de guardar.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF dañado.
 
     Returns:
         Response: Template con enlace al PDF reparado.
 
-    Parámetros de save():
-        garbage=4: limpieza profunda
-        deflate=True: compresión
-        clean=True: optimización
-        linear=True: reorganización para acceso página a página
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -460,20 +430,18 @@ def crop_pdf():
     """
     Recorta los márgenes de todas las páginas de un PDF.
 
-    Usa CropBox que oculta el contenido fuera del área sin eliminarlo.
-    Los márgenes se expresan en porcentaje para funcionar con cualquier
-    tamaño de página. Cada margen está limitado a máximo 40%.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a recortar.
-        margen_izq, margen_der, margen_sup, margen_inf (int): Porcentaje 0-40.
+        margen_izq (int): Margen izquierdo (0-40%).
+        margen_der (int): Margen derecho (0-40%).
+        margen_sup (int): Margen superior (0-40%).
+        margen_inf (int): Margen inferior (0-40%).
 
     Returns:
         Response: Template con enlace al PDF recortado.
 
-    Validaciones:
-        - Márgenes opuestos sumando >= 100% -> 400
-        - Valores no numéricos -> 400
+    Raises:
+        400: Si los márgenes opuestos suman >= 100% o no son numéricos.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -531,23 +499,16 @@ def crop_pdf():
 @login_required
 def pdf_to_pdfa():
     """
-    Convierte un PDF al formato PDF/A-2B (ISO 19005-2, nivel básico).
+    Convierte un PDF al formato PDF/A-2B para archivado a largo plazo.
 
-    PDF/A es el estándar internacional para archivado a largo plazo.
-    Es obligatorio en muchos trámites gubernamentales en Colombia.
-    Los metadatos XMP que declaran el cumplimiento del estándar se
-    insertan mediante pikepdf que opera a nivel de estructura interna.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a convertir.
 
     Returns:
         Response: Template con enlace al PDF/A generado.
 
-    Metadatos insertados:
-        pdfaid:part = '2' -> versión PDF/A-2
-        pdfaid:conformance = 'B' -> nivel básico (reproducción visual)
-        dc:format = 'application/pdf' -> tipo de contenido
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400

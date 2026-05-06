@@ -15,20 +15,17 @@ basic_bp = Blueprint('basic', __name__)
 @login_required
 def rotate_pdf():
     """
-    Rota todas las páginas de un PDF en el ángulo indicado.
+    Rota todas las páginas de un PDF en el ángulo indicado (90°, 180° o 270°).
 
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a rotar.
-        angulo (str): Ángulo de rotación. Debe ser '90', '180' o '270'.
+        angulo (str): Ángulo de rotación (90, 180 o 270).
 
     Returns:
         Response: Template con enlace al PDF rotado.
 
-    Validaciones:
-        - Archivo no seleccionado -> 400
-        - Extensión diferente a .pdf -> 400
-        - Ángulo no es 90/180/270 -> 400
-        - Ángulo no numérico -> 400
+    Raises:
+        400: Si el archivo no es PDF, ángulo inválido o no es numérico.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -69,21 +66,16 @@ def extract_pages():
     """
     Extrae páginas específicas de un PDF y las guarda en un nuevo documento.
 
-    El usuario puede especificar páginas individuales (1,3,5), rangos (2-6)
-    o combinaciones (1,3-5,8). Usa parsear_paginas() para procesar el input.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF fuente.
-        paginas (str): Páginas a extraer. Ej: '1,3-5,8'.
+        paginas (str): Páginas a extraer (ej: '1,3-5,8').
 
     Returns:
         Response: Template con enlace al PDF extraído.
 
-    Validaciones:
-        - Archivo no seleccionado -> 400
-        - Campo de páginas vacío -> 400
-        - Páginas fuera de rango -> se filtran silenciosamente
-        - Lista vacía tras filtro -> 400
+    Raises:
+        400: Si no se selecciona archivo, campo vacío o sin páginas válidas.
+        ValueError: Si el formato de páginas es inválido.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -135,15 +127,15 @@ def watermark_pdf():
     """
     Inserta texto semitransparente en diagonal sobre todas las páginas del PDF.
 
-    El texto se centra dinámicamente en cada página según sus dimensiones,
-    con rotación de 45° y opacidad del 30% para no ocultar el contenido.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a marcar.
-        texto (str): Texto de la marca de agua. Por defecto: 'CONFIDENCIAL'.
+        texto (str): Texto de marca de agua. Por defecto: 'CONFIDENCIAL'.
 
     Returns:
         Response: Template con enlace al PDF con marca de agua.
+
+    Raises:
+        400: Si no se selecciona archivo o texto vacío.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -197,13 +189,9 @@ def watermark_pdf():
 @login_required
 def protect_pdf():
     """
-    Encripta un PDF con contraseña usando el algoritmo AES-256.
+    Encripta un PDF con contraseña usando AES-256.
 
-    Genera automáticamente un owner_pwd diferente al user_pwd para
-    evitar que quien tenga la contraseña de apertura pueda editar
-    los permisos del documento.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF a proteger.
         password (str): Contraseña para abrir el documento.
         confirm_password (str): Confirmación de la contraseña.
@@ -211,10 +199,8 @@ def protect_pdf():
     Returns:
         Response: Template con enlace al PDF protegido.
 
-    Validaciones:
-        - Contraseña vacía -> 400
-        - Contraseñas no coinciden -> 400
-        - Contraseña menor a 4 caracteres -> 400
+    Raises:
+        400: Si la contraseña está vacía, no coincide o tiene menos de 4 caracteres.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -264,19 +250,15 @@ def unlock_pdf():
     """
     Elimina la protección por contraseña de un PDF encriptado.
 
-    Verifica primero que el PDF esté encriptado antes de intentar
-    autenticar. Guarda sin parámetros de contraseña para quitar la protección.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF protegido.
         password (str): Contraseña del documento.
 
     Returns:
         Response: Template con enlace al PDF desbloqueado.
 
-    Validaciones:
-        - PDF no está encriptado -> 400
-        - Contraseña incorrecta -> 400 (authenticate() retorna 0)
+    Raises:
+        400: Si el PDF no está encriptado o la contraseña es incorrecta.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
@@ -327,15 +309,14 @@ def flatten_pdf():
     """
     Aplana un PDF convirtiendo anotaciones y campos de formulario en contenido estático.
 
-    El resultado no puede ser editado — los campos interactivos quedan
-    como texto plano incrustado en la página. Útil para enviar formularios
-    diligenciados sin posibilidad de modificación posterior.
-
-    Parámetros del formulario:
+    Args:
         pdf_file (file): Archivo PDF con formularios o anotaciones.
 
     Returns:
         Response: Template con enlace al PDF aplanado.
+
+    Raises:
+        400: Si no se selecciona archivo.
     """
     if 'pdf_file' not in request.files:
         return 'No se ha seleccionado un archivo.', 400
