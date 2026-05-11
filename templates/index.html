@@ -643,6 +643,53 @@
                     {% endif %}
                 </div>
 
+                <!-- Reducir tamaño PDF -->
+                <div class="tool-card" data-cat="intermedio" data-name="reducir tamaño shrink reduce smaller smallerfile">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="icon-box" style="background:#DBEAFE;">
+                            <svg class="w-6 h-6" fill="none" stroke="#1E40AF" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Reducir tamaño</h3>
+                            <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Reduce significativamente el tamaño del PDF comprimiendo las imágenes internas. Elige entre calidad alta, media o baja según tus necesidades de uso.</p>
+                        </div>
+                    </div>
+                    <form action="/reduce" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="border: 2px dashed var(--color-border); border-radius: 12px; padding: 16px; text-align: center; transition: border-color 0.2s;">
+                            <input type="file" name="pdf_file" id="pdf_reduce" accept=".pdf" class="hidden" required>
+                            <label for="pdf_reduce" class="cursor-pointer" style="display: block;">
+                                <svg class="w-10 h-10 mx-auto mb-3" style="color:var(--color-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <p class="text-sm" style="color:var(--color-muted);">Selecciona un archivo PDF</p>
+                            </label>
+                            <div id="reduceFileDisplayArea" class="mt-4 hidden">
+                                <div id="reduceFileName"></div>
+                                <button type="button" id="reduceRemoveFileBtn" class="text-red-500 text-lg font-semibold mt-2">❌ Eliminar archivo</button>
+                            </div>
+                        </div>
+                        <select name="nivel" style="width:100%; border:1px solid var(--color-border); border-radius:10px; padding:10px 14px; font-size:14px; color:var(--color-text); outline:none;">
+                            <option value="bajo">Alta calidad — menor reducción</option>
+                            <option value="medio" selected>Calidad media — reducción equilibrada</option>
+                            <option value="alto">Baja calidad — máxima reducción</option>
+                        </select>
+                        <button type="submit" class="btn-primary">Reducir tamaño</button>
+                    </form>
+                    {% if output_file %}
+                    <div style="text-align:center; margin-top:8px;">
+                        <h4 style="font-size:14px; font-weight:600; color:var(--color-text); margin-bottom:4px;">Reducción completada</h4>
+                        {% if ahorro is defined and ahorro > 0 %}
+                        <p class="text-sm" style="color:#16A34A; font-weight:600; margin-bottom:4px;">Reducción: {{ ahorro }}%</p>
+                        {% else %}
+                        <p class="text-sm" style="color:var(--color-muted); margin-bottom:4px;">El archivo ya estaba optimizado</p>
+                        {% endif %}
+                        <a href="{{ output_file }}" download class="text-blue-600 hover:underline" style="font-size:14px;">Descargar PDF</a>
+                    </div>
+                    {% endif %}
+                </div>
+
                 <!-- PDF a PNG/JPG -->
                 <div class="tool-card" data-cat="convertir" data-name="pdf a imagen png jpg image">
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -968,6 +1015,7 @@
         let selectedFileSignPdf = null;
         let selectedFileSignImage = null;
         let selectedFileRepair = null;
+        let selectedFileReduce = null;
 
         const resetSelectionByInput = {
             pdfToPPT: () => { selectedFileConvertir = null; },
@@ -989,6 +1037,7 @@
             pdf_sign: () => { selectedFileSignPdf = null; },
             firma_sign: () => { selectedFileSignImage = null; },
             pdf_repair: () => { selectedFileRepair = null; },
+            pdf_reduce: () => { selectedFileReduce = null; },
             singlePdf: () => { selectedFileSeparar = null; }
         };
 
@@ -1200,6 +1249,16 @@
             selectedFileRepair = event.target.files[0];
             updateFileDisplay('pdf_repair', 'repairFileDisplayArea', 'repairFileName', 'repairRemoveFileBtn',
                 selectedFileRepair);
+        });
+
+        document.getElementById('pdf_reduce')?.addEventListener('change', function(event) {
+            if (!validarTamano(event.target.files[0])) {
+                this.value = '';
+                return;
+            }
+            selectedFileReduce = event.target.files[0];
+            updateFileDisplay('pdf_reduce', 'reduceFileDisplayArea', 'reduceFileName', 'reduceRemoveFileBtn',
+                selectedFileReduce);
         });
 
         document.getElementById('convertirPdfBtn').addEventListener('click', function() {

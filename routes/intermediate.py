@@ -250,6 +250,83 @@ def compress_pdf():
     )
 
 
+@intermediate_bp.route('/reduce', methods=['POST'])
+@login_required
+def reduce_pdf():
+    """
+    Reduce significativamente el tamaño de un PDF reduciendo la calidad de las imágenes.
+
+    Args:
+        pdf_file (file): Archivo PDF a reducir.
+        nivel (str): Nivel de compresión ('bajo', 'medio', 'alto'). Por defecto: 'medio'.
+
+    Returns:
+        Response: Template con enlace al PDF reducido y porcentaje de ahorro.
+
+    Raises:
+        400: Si no se selecciona archivo.
+    """
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    nivel = request.form.get('nivel', 'medio')
+    if nivel not in {'bajo', 'medio', 'alto'}:
+        nivel = 'medio'
+
+    config_nivel = {
+        'bajo': {'dpi': 150, 'calidad': 85},
+        'medio': {'dpi': 100, 'calidad': 70},
+        'alto': {'dpi': 72, 'calidad': 50}
+    }
+    dpi = config_nivel[nivel]['dpi']
+    calidad = config_nivel[nivel]['calidad']
+
+    filename = secure_filename(file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(pdf_path)
+
+    output_filename = filename.rsplit('.', 1)[0] + '_reducido.pdf'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc_origen = fitz.open(pdf_path)
+        doc_nuevo = fitz.open()
+
+        for pagina in doc_origen:
+            ancho = pagina.rect.width
+            alto = pagina.rect.height
+            pagina_nueva = doc_nuevo.new_page(width=ancho, height=alto)
+
+            pixmap = pagina.get_pixmap(dpi=dpi)
+            imagen_bytes = pixmap.tobytes('jpeg', quality=calidad)
+            pagina_nueva.insert_image(fitz.Rect(0, 0, ancho, alto), stream=imagen_bytes)
+
+        doc_origen.close()
+        doc_nuevo.save(output_path, garbage=4, deflate=True, clean=True)
+        doc_nuevo.close()
+
+        tamaño_original = os.path.getsize(pdf_path)
+        tamaño_reducido = os.path.getsize(output_path)
+        ahorro = round((1 - tamaño_reducido / tamaño_original) * 100, 1)
+
+        if ahorro < 0:
+            ahorro = 0
+
+    except Exception as e:
+        return f'Error al procesar el archivo: {str(e)}', 500
+
+    return render_template(
+        'index.html',
+        output_file=f'/download/{output_filename}',
+        ahorro=ahorro
+    )
+
+
 @intermediate_bp.route('/pdf_to_jpg', methods=['POST'])
 @login_required
 def pdf_to_jpg():
