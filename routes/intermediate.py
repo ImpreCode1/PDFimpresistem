@@ -8,6 +8,7 @@ from auth import login_required
 import fitz
 import pikepdf
 import io
+from PIL import Image
 import zipfile
 import os
 
@@ -294,21 +295,50 @@ def reduce_pdf():
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
     try:
-        doc_origen = fitz.open(pdf_path)
-        doc_nuevo = fitz.open()
+        doc = fitz.open(pdf_path)
+        xrefs_vistos = set()
 
-        for pagina in doc_origen:
-            ancho = pagina.rect.width
-            alto = pagina.rect.height
-            pagina_nueva = doc_nuevo.new_page(width=ancho, height=alto)
+        for page in doc:
+            for img_info in page.get_images(full=True):
+                xref = img_info[0]
+                if xref in xrefs_vistos:
+                    continue
+                xrefs_vistos.add(xref)
 
-            pixmap = pagina.get_pixmap(dpi=dpi)
-            imagen_bytes = pixmap.tobytes('jpeg', quality=calidad)
-            pagina_nueva.insert_image(fitz.Rect(0, 0, ancho, alto), stream=imagen_bytes)
+                try:
+                    base_image = doc.extract_image(xref)
+                    img_bytes = base_image["image"]
 
-        doc_origen.close()
-        doc_nuevo.save(output_path, garbage=4, deflate=True, clean=True)
-        doc_nuevo.close()
+                    pil_img = Image.open(io.BytesIO(img_bytes))
+                    w, h = pil_img.size
+
+                    factor = min(1.0, dpi / 200.0)
+                    if factor < 0.95:
+                        new_w = max(1, int(w * factor))
+                        new_h = max(1, int(h * factor))
+                        pil_img = pil_img.resize((new_w, new_h), Image.LANCZOS)
+                        w, h = new_w, new_h
+
+                    if pil_img.mode in ('RGBA', 'LA', 'P', 'CMYK'):
+                        pil_img = pil_img.convert('RGB')
+
+                    output_io = io.BytesIO()
+                    pil_img.save(output_io, format='JPEG', quality=calidad, optimize=True)
+                    new_bytes = output_io.getvalue()
+
+                    if len(new_bytes) < len(img_bytes):
+                        doc.update_stream(xref, new_bytes)
+                        doc.xref_set_key(xref, "Filter", "/DCTDecode")
+                        doc.xref_set_key(xref, "Width", str(w))
+                        doc.xref_set_key(xref, "Height", str(h))
+                        colorspace = "/DeviceGray" if pil_img.mode == 'L' else "/DeviceRGB"
+                        doc.xref_set_key(xref, "ColorSpace", colorspace)
+                        doc.xref_set_key(xref, "BitsPerComponent", "8")
+                except Exception:
+                    continue
+
+        doc.save(output_path, garbage=4, deflate=True, clean=True)
+        doc.close()
 
         tamaño_original = os.path.getsize(pdf_path)
         tamaño_reducido = os.path.getsize(output_path)
