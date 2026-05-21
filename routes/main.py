@@ -125,7 +125,7 @@ def reorder_ui():
 @main_bp.route('/organize_ui')
 @login_required
 def organize_ui():
-    """Renderiza la página de organizar PDF."""
+    """Renderiza la página de eliminar PDF."""
     return render_template('organize.html')
 
 
