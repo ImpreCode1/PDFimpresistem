@@ -8,7 +8,7 @@ from flask import request, redirect, session, url_for
 # ─── Configuración ────────────────────────────────────────────────────────────
 # JWT_SECRET debe coincidir exactamente con el secreto de Hydra IAM
 # En producción: usar variable de entorno, NUNCA hardcodeado en el código
-JWT_SECRET = os.getenv('JWT_SECRET', 'super_secret_key')
+JWT_SECRET = os.getenv('JWT_SECRET')
 if not os.getenv('JWT_SECRET'):
     import warnings
     warnings.warn(
