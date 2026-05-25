@@ -195,10 +195,10 @@ def convert():
 
     file = request.files['pdf_file']
 
-    if file.filename == '' or not file.filename.endswith('.pdf'):
+    if file.filename == '' or not file.filename.endswith('.pdf'): # type: ignore
         return 'Por favor, suba un archivo PDF.', 400
 
-    filename = secure_filename(file.filename)
+    filename = secure_filename(file.filename) # type: ignore
     pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
@@ -206,7 +206,7 @@ def convert():
     word_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
     cv = Converter(pdf_path)
-    cv.convert(word_path, start=0, end=None)
+    cv.convert(word_path, start=0, end=None) # type: ignore
     cv.close()
 
     output_file_url = f'/download/{output_filename}'
