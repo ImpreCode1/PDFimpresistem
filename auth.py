@@ -63,6 +63,8 @@ def validar_token(token: str) -> dict:
     return payload
 
 
+
+
 # ─── Decorador de protección ──────────────────────────────────────────────────
 def login_required(f):
     """
@@ -83,6 +85,22 @@ def login_required(f):
 """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        
+        # ── BYPASS LOCAL (solo desarrollo) ──────────────────────────────
+        if os.getenv('FLASK_ENV') == 'development':
+            if 'user' not in session:
+                session['user'] = {
+                    'sub': 'local-dev',
+                    'email': 'daniel.medina@impresistem.com',
+                    'name': 'Daniel Medina (Dev)',
+                    'roles': ['USER', 'ADMIN'],
+                    'positionId': None,
+                    'platform': 'PDFS',
+                }
+                session.permanent = True
+            return f(*args, **kwargs)
+        # ────────────────────────────────────────────────────────────────
+
         # 1. Verificar sesión primero
         if 'user' in session:
             print(f'[login_required] Session found: {session.get("user", {})}')
