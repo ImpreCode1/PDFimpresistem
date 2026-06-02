@@ -40,10 +40,26 @@
             <!-- Tool Selector -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Herramienta</label>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                     <button type="button" id="toolText" onclick="selectTool('text')"
                         class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm tool-active">
                         T Texto
+                    </button>
+                    <button type="button" id="toolSelect" onclick="selectTool('select')"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm">
+                        ↖ Mover
+                    </button>
+                    <button type="button" id="toolRect" onclick="selectTool('rect')"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm">
+                        ▭ Rect
+                    </button>
+                    <button type="button" id="toolHighlight" onclick="selectTool('highlight')"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm">
+                        ◼ Resaltar
+                    </button>
+                    <button type="button" id="toolDelete" onclick="deleteSelected()"
+                        class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-3 rounded-lg text-sm">
+                        🗑 Eliminar
                     </button>
                 </div>
             </div>
@@ -101,10 +117,12 @@
         let pdfBase64 = null;
         let canvasWidth = 595;
         let canvasHeight = 842;
-        let currentPage = 1;
+        let currentPage = 1; // siempre entero
         let totalPages = 1;
         let pageAnnotations = {};
         let currentTool = 'text';
+        let pdfTextBlocks = [];
+        let canvasScale = 1.0;
 
         const pdfInput = document.getElementById('pdfInput');
         const pageNum = document.getElementById('pageNum');
@@ -125,9 +143,18 @@
             canvas.renderAll();
 
             canvas.on('mouse:down', function(options) {
+                const pointer = canvas.getPointer(options.e);
                 if (currentTool === 'text' && !options.target) {
-                    const pointer = canvas.getPointer(options.e);
-                    addText(pointer.x, pointer.y);
+                    const existingBlock = findTextBlockAt(pointer.x, pointer.y);
+                    if (existingBlock) {
+                        addTextOverlay(existingBlock);
+                    } else {
+                        addText(pointer.x, pointer.y);
+                    }
+                } else if (currentTool === 'rect' && !options.target) {
+                    addRect(pointer.x, pointer.y);
+                } else if (currentTool === 'highlight' && !options.target) {
+                    addHighlight(pointer.x, pointer.y);
                 }
             });
         }
@@ -151,34 +178,177 @@
             updateAnnotationList();
         }
 
+        function findTextBlockAt(x, y) {
+            for (const block of pdfTextBlocks) {
+                if (x >= block.x0 && x <= block.x1 && y >= block.y0 && y <= block.y1) {
+                    return block;
+                }
+            }
+            return null;
+        }
+
+        function addTextOverlay(block) {
+            const width = block.x1 - block.x0;
+            const height = block.y1 - block.y0;
+
+            // Rectángulo blanco que tapa el texto original
+            const cover = new fabric.Rect({
+                left: block.x0,
+                top: block.y0,
+                width: width + 4,
+                height: height + 4,
+                fill: 'white',
+                stroke: 'transparent',
+                strokeWidth: 0,
+                selectable: false,
+                evented: false,
+                customType: 'cover'
+            });
+
+            // Texto nuevo pre-cargado con el texto original
+            const text = new fabric.IText(block.text, {
+                left: block.x0,
+                top: block.y0,
+                fontSize: Math.round(block.size * 0.75),
+                fill: textColorInput.value,
+                fontFamily: 'Arial',
+                customType: 'overlay'
+            });
+
+            text.on('changed', function() {
+                updateAnnotationList();
+            });
+
+            canvas.add(cover);
+            canvas.add(text);
+            canvas.setActiveObject(text);
+            text.enterEditing();
+            updateAnnotationList();
+        }
+
+        function addRect(x, y) {
+            const rect = new fabric.Rect({
+                left: x,
+                top: y,
+                width: 150,
+                height: 80,
+                fill: 'transparent',
+                stroke: textColorInput.value,
+                strokeWidth: 2,
+                selectable: true
+            });
+            rect.customType = 'rect';
+            canvas.add(rect);
+            canvas.setActiveObject(rect);
+            updateAnnotationList();
+        }
+
+        function addHighlight(x, y) {
+            const rect = new fabric.Rect({
+                left: x,
+                top: y,
+                width: 200,
+                height: 20,
+                fill: 'rgba(255, 235, 59, 0.4)',
+                stroke: 'transparent',
+                strokeWidth: 0,
+                selectable: true
+            });
+            rect.customType = 'highlight';
+            canvas.add(rect);
+            canvas.setActiveObject(rect);
+            updateAnnotationList();
+        }
+
+        function deleteSelected() {
+            const active = canvas.getActiveObject();
+            if (!active) return;
+            if (active.type === 'activeSelection') {
+                active.forEachObject(obj => canvas.remove(obj));
+                canvas.discardActiveObject();
+            } else {
+                canvas.remove(active);
+            }
+            updateAnnotationList();
+            canvas.renderAll();
+        }
+
         function selectTool(tool) {
             currentTool = tool;
-            document.getElementById('toolText').classList.toggle('tool-active', tool === 'text');
+            // Reset todos los botones
+            ['toolText', 'toolSelect', 'toolRect', 'toolHighlight'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.classList.remove('tool-active');
+            });
+            // Activar botón seleccionado
+            const activeId = {text: 'toolText', select: 'toolSelect', rect: 'toolRect', highlight: 'toolHighlight'}[tool];
+            if (activeId) document.getElementById(activeId).classList.add('tool-active');
+
+            // Configurar canvas según herramienta
+            if (tool === 'select') {
+                canvas.isDrawingMode = false;
+                canvas.selection = true;
+                canvas.forEachObject(obj => { obj.selectable = true; obj.evented = true; });
+            } else {
+                canvas.selection = false;
+                canvas.forEachObject(obj => { obj.selectable = tool === 'select'; });
+            }
+            canvas.renderAll();
         }
 
         async function fetchPagePreview() {
             if (!pdfInput.files[0]) return;
-            
-            const formData = new FormData();
-            formData.append('pdf_file', pdfInput.files[0]);
-            formData.append('pagina', pageNum.value);
-            
+
+            // Leer el archivo UNA sola vez como ArrayBuffer
+            const fileBuffer = await pdfInput.files[0].arrayBuffer();
+            const fileName = pdfInput.files[0].name;
+            const fileType = pdfInput.files[0].type || 'application/pdf';
+
+            const makeFormData = () => {
+                const fd = new FormData();
+                fd.append('pdf_file', new Blob([fileBuffer], { type: fileType }), fileName);
+                fd.append('pagina', pageNum.value);
+                return fd;
+            };
+
             try {
-                const response = await fetch('/api/page_preview', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (data.image) {
-                    pdfBase64 = data.image;
+                const [previewRes, textRes] = await Promise.all([
+                    fetch('/api/page_preview', { method: 'POST', body: makeFormData() }),
+                    fetch('/api/extract_text', { method: 'POST', body: makeFormData() })
+                ]);
+
+                const previewData = await previewRes.json();
+                const textData = await textRes.json();
+
+                const rawBlocks = textData.blocks || [];
+
+                if (previewData.total_pages) {
+                    totalPages = previewData.total_pages;
+                    totalPagesSpan.textContent = totalPages;
+                    pageCountDisplay.classList.remove('hidden');
+                }
+
+                if (previewData.image) {
+                    pdfBase64 = previewData.image;
                     const img = new Image();
                     img.onload = function() {
                         const maxW = 800, maxH = 800;
                         let scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                        canvasScale = scale;
                         canvasWidth = img.width * scale;
                         canvasHeight = img.height * scale;
                         canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+
+                        // Escalar bloques de texto al tamaño real del canvas
+                        pdfTextBlocks = rawBlocks.map(b => ({
+                            text: b.text,
+                            x0: b.x0 * scale,
+                            y0: b.y0 * scale,
+                            x1: b.x1 * scale,
+                            y1: b.y1 * scale,
+                            size: b.size * scale
+                        }));
+
                         loadPageAnnotations();
                     };
                     img.src = pdfBase64;
@@ -190,18 +360,38 @@
         }
 
         function saveCurrentPageAnnotations() {
-            const objects = canvas.getObjects().filter(o => o.type === 'i-text');
-            pageAnnotations[currentPage] = objects.map(obj => ({
-                left: obj.left,
-                top: obj.top,
-                text: obj.text,
-                fontSize: obj.fontSize,
-                fill: obj.fill,
-                width: obj.width,
-                height: obj.height,
-                scaleX: obj.scaleX,
-                scaleY: obj.scaleY
-            }));
+            const pageKey = parseInt(currentPage);
+            const objects = canvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'rect');
+            pageAnnotations[pageKey] = objects.map(obj => {
+                if (obj.type === 'i-text') {
+                    return {
+                        type: 'text',
+                        left: obj.left,
+                        top: obj.top,
+                        text: obj.text,
+                        fontSize: obj.fontSize,
+                        fill: obj.fill,
+                        width: obj.width,
+                        height: obj.height,
+                        scaleX: obj.scaleX,
+                        scaleY: obj.scaleY
+                    };
+                } else {
+                    return {
+                        type: 'rect',
+                        left: obj.left,
+                        top: obj.top,
+                        width: obj.width,
+                        height: obj.height,
+                        fill: obj.fill,
+                        stroke: obj.stroke,
+                        strokeWidth: obj.strokeWidth,
+                        scaleX: obj.scaleX,
+                        scaleY: obj.scaleY,
+                        customType: obj.customType
+                    };
+                }
+            });
         }
 
         function loadPageAnnotations() {
@@ -224,21 +414,37 @@
         function restoreAnnotations() {
             if (pageAnnotations[currentPage]) {
                 pageAnnotations[currentPage].forEach(data => {
-                    const text = new fabric.IText(data.text, {
-                        left: data.left,
-                        top: data.top,
-                        fontSize: data.fontSize,
-                        fill: data.fill,
-                        fontFamily: 'Arial',
-                        scaleX: data.scaleX || 1,
-                        scaleY: data.scaleY || 1
-                    });
-                    
-                    text.on('changed', function() {
-                        updateAnnotationList();
-                    });
-                    
-                    canvas.add(text);
+                    if (data.type === 'text' || !data.type) {
+                        const text = new fabric.IText(data.text, {
+                            left: data.left,
+                            top: data.top,
+                            fontSize: data.fontSize,
+                            fill: data.fill,
+                            fontFamily: 'Arial',
+                            scaleX: data.scaleX || 1,
+                            scaleY: data.scaleY || 1
+                        });
+                        
+                        text.on('changed', function() {
+                            updateAnnotationList();
+                        });
+                        
+                        canvas.add(text);
+                    } else if (data.type === 'rect') {
+                        const rect = new fabric.Rect({
+                            left: data.left,
+                            top: data.top,
+                            width: data.width,
+                            height: data.height,
+                            fill: data.fill,
+                            stroke: data.stroke,
+                            strokeWidth: data.strokeWidth,
+                            scaleX: data.scaleX || 1,
+                            scaleY: data.scaleY || 1
+                        });
+                        rect.customType = data.customType;
+                        canvas.add(rect);
+                    }
                 });
             }
             updateAnnotationList();
@@ -252,10 +458,10 @@
         }
 
         function updateAnnotationList() {
-            const objects = canvas.getObjects().filter(o => o.type === 'i-text');
+            const objects = canvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'rect');
             
             if (objects.length === 0) {
-                annotationList.innerHTML = '<p class="text-xs text-gray-400">Haz clic en el canvas para agregar texto</p>';
+                annotationList.innerHTML = '<p class="text-xs text-gray-400">Haz clic en el canvas para agregar elementos</p>';
                 return;
             }
             
@@ -273,7 +479,15 @@
                     
                     const textPreview = document.createElement('span');
                     textPreview.className = 'text-gray-600';
-                    textPreview.textContent = ann.text.substring(0, 30) + (ann.text.length > 30 ? '...' : '');
+                    if (ann.type === 'text' || !ann.type) {
+                        textPreview.textContent = '📝 ' + (ann.text || '').substring(0, 30) + ((ann.text || '').length > 30 ? '...' : '');
+                    } else if (ann.type === 'rect' && ann.customType === 'highlight') {
+                        textPreview.textContent = '◼ Resaltar';
+                    } else if (ann.type === 'rect' && ann.customType === 'rect') {
+                        textPreview.textContent = '▭ Rect';
+                    } else {
+                        textPreview.textContent = '▭ Rectángulo';
+                    }
                     
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'float-right text-red-500 hover:text-red-700';
@@ -313,17 +527,26 @@
                 const pageAnns = pageAnnotations[page];
                 if (pageAnns && pageAnns.length > 0) {
                     pageAnns.forEach(ann => {
-                        const pos_x = (ann.left / canvasWidth) * 100;
-                        const pos_y = (ann.top / canvasHeight) * 100;
-                        
-                        annotations.push({
-                            pagina: parseInt(page),
-                            texto: ann.text,
-                            pos_x: Math.round(pos_x),
-                            pos_y: Math.round(pos_y),
-                            fontsize: ann.fontSize,
-                            color: ann.fill
-                        });
+                        if (ann.type === 'rect' && ann.customType === 'cover') {
+                            annotations.push({
+                                tipo: 'cover',
+                                pagina: parseInt(page),
+                                x0_abs: ann.left,
+                                y0_abs: ann.top,
+                                x1_abs: ann.left + ann.width * (ann.scaleX || 1),
+                                y1_abs: ann.top + ann.height * (ann.scaleY || 1)
+                            });
+                        } else if (ann.type === 'text') {
+                            annotations.push({
+                                tipo: 'text',
+                                pagina: parseInt(page),
+                                texto: ann.text,
+                                x_abs: ann.left,
+                                y_abs: ann.top,
+                                fontsize: ann.fontSize,
+                                color: ann.fill
+                            });
+                        }
                     });
                 }
             });
@@ -335,6 +558,7 @@
             
             const formData = new FormData();
             formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('canvas_scale', canvasScale);
             formData.append('anotaciones', JSON.stringify(annotations));
             
             try {
