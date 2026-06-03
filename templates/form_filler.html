@@ -3,20 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <title>Rellenar formulario — PDF Impresistem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        #pdfCanvas {
-            border: 1px solid #e5e7eb;
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background: #e8eaed;
         }
+
+        .form-topbar {
+            background: #1a2332;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .form-logo {
+            width: 26px;
+            height: 26px;
+            background: #f5c518;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #1a2332;
+            flex-shrink: 0;
+        }
+
+        .form-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .form-filename {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            margin-left: 4px;
+        }
+
+        .page-control-inline {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .page-label-inline {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        .page-input-inline {
+            width: 48px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 4px 6px;
+            color: #fff;
+            font-size: 13px;
+            text-align: center;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .form-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Canvas panel */
+        .canvas-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e8eaed;
+            overflow: hidden;
+        }
+
+        .canvas-panel-inner {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        #pdfCanvas { display: block; }
+
+        /* Fields panel */
+        .fields-panel {
+            width: 380px;
+            min-width: 380px;
+            background: #1a2332;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-left: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .fields-panel-header {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+
+        .fields-panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .fields-panel-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+        }
+
+        .fields-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        .fields-scroll::-webkit-scrollbar { width: 4px; }
+        .fields-scroll::-webkit-scrollbar-track { background: transparent; }
+        .fields-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.12);
+            border-radius: 2px;
+        }
+
+        .page-group-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.25);
+            text-transform: uppercase;
+            margin: 12px 0 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .page-group-label:first-child { margin-top: 0; }
+
         .field-card {
-            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 9px 11px;
+            margin-bottom: 6px;
+            transition: all 0.15s;
         }
+
         .field-card.highlighted {
-            border-color: #3B82F6;
-            background-color: #EFF6FF;
-            box-shadow: 0 0 0 2px #3B82F6;
+            border-color: rgba(245,197,24,0.5);
+            background: rgba(245,197,24,0.08);
+            box-shadow: 0 0 0 1px rgba(245,197,24,0.3);
         }
+
+        .field-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 5px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .field-input {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            padding: 6px 9px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            box-sizing: border-box;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: rgba(245,197,24,0.5);
+        }
+
+        .field-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #f5c518;
+            cursor: pointer;
+        }
+
+        .fields-footer {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 9px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255,255,255,0.11);
+            color: #fff;
+        }
+
+        .btn-save {
+            flex: 1;
+            background: #f5c518;
+            color: #1a2332;
+            border: none;
+            border-radius: 8px;
+            padding: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-save:hover { background: #e6b800; }
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -26,75 +259,77 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="flex h-screen">
-        <!-- Left: PDF Canvas (60%) -->
-        <div class="w-3/5 p-5 overflow-auto flex flex-col">
-            <div class="flex items-center justify-between mb-4">
-                <h1 class="text-xl font-bold text-gray-800">Vista previa del PDF</h1>
-                <div class="flex items-center gap-2">
-                    <label class="text-sm font-medium text-gray-700">Página:</label>
-                    <input type="number" id="pageNum" value="1" min="1" 
-                        class="w-16 border border-gray-300 rounded-lg py-1 px-2 text-center">
-                </div>
-            </div>
-            <div class="flex-1 flex items-center justify-center bg-gray-100 rounded-xl">
-                <div class="bg-white rounded-xl shadow-lg p-4">
+<body>
+    <!-- Top bar -->
+    <div class="form-topbar">
+        <div class="form-logo">im</div>
+        <span class="form-title">Rellenar formulario</span>
+        <span class="form-filename">{{ pdf_nombre }}</span>
+        <div class="page-control-inline">
+            <span class="page-label-inline">Página:</span>
+            <input type="number" id="pageNum" value="1" min="1" class="page-input-inline">
+        </div>
+    </div>
+
+    <div class="form-body">
+        <!-- Canvas panel -->
+        <div class="canvas-panel">
+            <div class="canvas-panel-inner">
+                <div class="canvas-card">
                     <canvas id="pdfCanvas"></canvas>
                 </div>
             </div>
+            <div class="status-bar">
+                <div class="status-item"><div class="status-dot"></div> Listo</div>
+                <div class="status-item">Haz clic en un campo del PDF para resaltarlo</div>
+            </div>
         </div>
 
-        <!-- Right: Fields Panel (40%) -->
-        <div class="w-2/5 bg-white border-l border-gray-200 p-5 overflow-y-auto">
-            <h2 class="text-xl font-bold text-gray-800 mb-2">Campos del formulario</h2>
-            <p class="text-gray-500 text-sm mb-6">Archivo: <span class="font-medium text-gray-700">{{ pdf_nombre }}</span></p>
+        <!-- Fields panel -->
+        <div class="fields-panel">
+            <div class="fields-panel-header">
+                <div class="fields-panel-title">Campos del formulario</div>
+                <div class="fields-panel-sub">{{ pdf_nombre }}</div>
+            </div>
 
-            <form action="/form_filler/guardar" method="POST" id="formFields">
-                <input type="hidden" name="pdf_nombre" value="{{ pdf_nombre }}">
+            <div class="fields-scroll">
+                <form action="/form_filler/guardar" method="POST" id="formFields">
+                    <input type="hidden" name="pdf_nombre" value="{{ pdf_nombre }}">
 
-                {% for pagina in campos|groupby('pagina') %}
-                <div class="mb-6">
-                    <h3 class="text-sm font-semibold text-gray-600 mb-3 pb-2 border-b">
-                        Página {{ pagina.grouper + 1 }}
-                    </h3>
-                    
+                    {% for pagina in campos|groupby('pagina') %}
+                    <div class="page-group-label">Página {{ pagina.grouper + 1 }}</div>
+
                     {% for campo in pagina.list %}
-                    <div id="field-{{ campo.nombre }}" class="field-card field-card p-3 rounded-xl border-2 border-gray-200 mb-3" data-page="{{ campo.pagina }}">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            {{ campo.nombre }}
-                        </label>
+                    <div id="field-{{ campo.nombre }}" class="field-card" data-page="{{ campo.pagina }}">
+                        <label class="field-label">{{ campo.nombre }}</label>
 
                         {% if campo.tipo == 2 %}
-                        <input type="checkbox" name="{{ campo.nombre }}" 
+                        <input type="checkbox" name="{{ campo.nombre }}"
                             {% if campo.valor_actual %}checked{% endif %}
-                            class="w-5 h-5 text-blue-600 rounded"
+                            class="field-checkbox"
                             onchange="highlightFieldByName('{{ campo.nombre }}')">
                         {% else %}
-                        <input type="text" name="{{ campo.nombre }}" 
+                        <input type="text" name="{{ campo.nombre }}"
                             value="{{ campo.valor_actual }}"
-                            class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-blue-400"
+                            class="field-input"
                             onfocus="highlightFieldByName('{{ campo.nombre }}')">
                         {% endif %}
-                        
+
                         {% if campo.rect %}
-                        <input type="hidden" name="{{ campo.nombre }}_rect" 
+                        <input type="hidden" name="{{ campo.nombre }}_rect"
                             value='{"x0":{{ campo.rect.x0 }},"y0":{{ campo.rect.y0 }},"x1":{{ campo.rect.x1 }},"y1":{{ campo.rect.y1 }},"page_width":{{ campo.rect.page_width }},"page_height":{{ campo.rect.page_height }}}'>
                         {% endif %}
                     </div>
                     {% endfor %}
-                </div>
-                {% endfor %}
+                    {% endfor %}
 
-                <div class="flex gap-3 pt-4 border-t">
-                    <a href="/" class="flex-1 text-center border border-gray-300 text-gray-600 font-semibold py-3 px-6 rounded-xl hover:bg-gray-50 transition">
-                        Cancelar
-                    </a>
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition">
-                        Guardar PDF
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
+
+            <div class="fields-footer">
+                <a href="/" class="btn-cancel">Cancelar</a>
+                <button type="submit" form="formFields" class="btn-save">Guardar PDF</button>
+            </div>
         </div>
     </div>
 
