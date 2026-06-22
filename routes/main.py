@@ -5,6 +5,7 @@ from utils import limpiar_carpeta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
+import fitz
 from auth import login_required, HYDRA_LOGIN_URL, validar_token, JWT_SECRET
 import jwt
 import os
@@ -198,16 +199,42 @@ def convert():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    filename = secure_filename(file.filename)
+    # Sanitizar nombre: reemplazar caracteres especiales por guion bajo
+    import re
+    nombre_base = os.path.splitext(file.filename)[0]
+    nombre_limpio = re.sub(r'[^\w\-.]', '_', nombre_base)
+    filename = secure_filename(nombre_limpio + '.pdf')
+
     pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    output_filename = filename.rsplit('.', 1)[0] + '.docx'
+    # Validar antes de procesar
+    try:
+        doc = fitz.open(pdf_path)
+
+        if doc.is_encrypted:
+            doc.close()
+            return 'El PDF está protegido con contraseña. Desbloquéalo primero.', 400
+
+        total_paginas = doc.page_count
+        doc.close()
+
+        if total_paginas > 60:
+            return f'El PDF tiene {total_paginas} páginas. El límite es 30 páginas.', 400
+
+    except Exception as e:
+        return f'No se pudo leer el PDF: {str(e)}', 400
+
+    # Conservar nombre original limpio en el output
+    output_filename = nombre_limpio + '.docx'
     word_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
-    cv = Converter(pdf_path)
-    cv.convert(word_path, start=0, end=None)
-    cv.close()
+    try:
+        cv = Converter(pdf_path)
+        cv.convert(word_path, start=0, end=None)
+        cv.close()
+    except Exception as e:
+        return f'Error al convertir el archivo: {str(e)}', 500
 
     output_file_url = f'/download/{output_filename}'
-    return render_template('index.html', output_file=output_file_url)
+    return render_template('index.html', output_file=output_file_url, convirtiendo=False)
