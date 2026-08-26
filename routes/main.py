@@ -93,6 +93,16 @@ def auth():
         print(f'[Auth] Error inesperado validando token: {e}')
         return redirect(HYDRA_LOGIN_URL)
 
+# ─── Alias de compatibilidad con el lanzador de "Sistema de Gestión de Accesos" ──
+@main_bp.route('/login')
+def login_alias():
+    """
+    El panel central asume la convención /login de ImpreForms para todas
+    las plataformas. PDFimpresistem usa /auth como callback real de SSO
+    (ver función auth() arriba) — este alias solo reenvía a esa misma lógica,
+    para no duplicar la validación de token ni el manejo de sesión.
+    """
+    return auth()
 
 # ─── Cierre de sesión SSO ─────────────────────────────────────────────────────
 @main_bp.route('/logout', methods=['POST'])
