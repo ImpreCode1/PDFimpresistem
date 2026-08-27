@@ -36,6 +36,16 @@ app.register_blueprint(api_bp, url_prefix='/api')
 
 @app.errorhandler(413)
 def archivo_demasiado_grande(e):
+    """Maneja el error 413 cuando el archivo excede el límite permitido.
+
+    Se activa cuando el tamaño supera MAX_CONTENT_LENGTH (30 MB).
+
+    Args:
+        e: Excepción original de Flask/Werkzeug.
+
+    Returns:
+        tuple[str, int]: Mensaje de error y código HTTP 413.
+    """
     return 'El archivo supera el límite de 30 MB. Por favor sube un archivo más pequeño.', 413
 
 # Scheduler (unchanged)

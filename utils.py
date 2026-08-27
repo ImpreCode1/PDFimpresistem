@@ -1,5 +1,8 @@
 # utils.py
 
+"""Utilidades varias para PDFimpresistem: limpieza de carpetas, parsing de páginas,
+conversión de colores y otras operaciones auxiliares de procesamiento de PDF."""
+
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 import shutil
 import os

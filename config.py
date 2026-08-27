@@ -1,4 +1,10 @@
 # config.py
+"""Configuración de rutas y carpetas para PDFimpresistem.
+
+Define las carpetas de subida y salida de archivos, junto con sus
+límites de tamaño máximos. Las rutas se cargan desde variables de
+entorno (archivo .env) o usan valores por defecto.
+"""
 import os
 
 from dotenv import load_dotenv

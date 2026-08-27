@@ -1,0 +1,18 @@
+# docker-compose.yml — PDFimpresistem
+# Entorno Docker adicional; no reemplaza el despliegue Apache/mod_wsgi actual (app.wsgi)
+
+services:
+  web:
+    build: .
+    container_name: pdfimpresistem
+    # Puerto host:contenedor — gunicorn expone 8000 dentro
+    ports:
+      - "8000:8000"
+    # Variables de entorno desde archivo externo (no se hornean en la imagen)
+    env_file:
+      - .env
+    # Persistencia de archivos subidos/generados
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+    restart: unless-stopped
