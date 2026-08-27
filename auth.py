@@ -8,7 +8,7 @@ from flask import request, redirect, session, url_for
 # ─── Configuración ────────────────────────────────────────────────────────────
 # JWT_SECRET debe coincidir exactamente con el secreto de Hydra IAM
 # En producción: usar variable de entorno, NUNCA hardcodeado en el código
-JWT_SECRET = os.getenv('JWT_SECRET','')
+JWT_SECRET = os.getenv('JWT_SECRET', '')
 if not os.getenv('JWT_SECRET'):
     import warnings
     warnings.warn(
@@ -63,74 +63,19 @@ def validar_token(token: str) -> dict:
     return payload
 
 
+
+
 # ─── Decorador de protección ──────────────────────────────────────────────────
 def login_required(f):
     """
-    Decorador que protege una ruta verificando que existe una sesión activa.
+    Decorador no-op: autenticación deshabilitada el 26 ago 2026.
 
-    Si no hay sesión → forzar re-autenticación en Hydra.
-    Si hay sesión → deja pasar la petición y la información del usuario
-    queda disponible en session['user'] dentro de la ruta.
-
-    También acepta token desde URL o header Authorization como fallback.
-
-    Uso:
-        @main_bp.route('/')
-        @login_required
-        def index():
-            user = session['user']  # {'sub': ..., 'email': ..., 'name': ..., 'roles': [...]}
-            return render_template('index.html')
-"""
+    La app ya no depende de Hydra IAM / Sistema de Gestión de Accesos;
+    corre en red interna sin login. El decorador mantiene la misma firma
+    para no romper imports en routes/main.py, routes/basic.py,
+    routes/intermediate.py, routes/advanced.py y routes/api.py.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # 1. Verificar sesión primero
-        if 'user' in session:
-            print(f'[login_required] Session found: {session.get("user", {})}')
-            return f(*args, **kwargs)
-
-        # 2. Fallback: verificar token desde URL
-        token = request.args.get('token')
-        if token:
-            print(f'[login_required] Token found in URL, validating...')
-            try:
-                payload = validar_token(token)
-                print(f'[login_required] Token valid, payload: {payload.get("email")}')
-                session['user'] = {
-                    'sub': payload['sub'],
-                    'email': payload['email'],
-                    'name': payload['name'],
-                    'roles': payload['roles'],
-                    'positionId': payload.get('positionId'),
-                    'platform': payload.get('platform'),
-                }
-                session.permanent = True
-                print(f'[login_required] Session saved, redirecting to index')
-                return redirect(url_for('main.index'))
-            except Exception as e:
-                print(f'[login_required] Token validation failed: {type(e).__name__}: {e}')
-                pass
-
-        # 3. Fallback: verificar token desde header Authorization
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            token = auth_header.split(' ', 1)[1]
-            try:
-                payload = validar_token(token)
-                session['user'] = {
-                    'sub': payload['sub'],
-                    'email': payload['email'],
-                    'name': payload['name'],
-                    'roles': payload['roles'],
-                    'positionId': payload.get('positionId'),
-                    'platform': payload.get('platform'),
-                }
-                session.permanent = True
-                return f(*args, **kwargs)
-            except Exception as e:
-                print(f'[login_required] Token validation failed: {type(e).__name__}: {e}')
-                pass
-
-        # No hay sesión ni token válido → redirigir a Hydra
-        print('[login_required] No session, redirecting to HYDRA_LOGIN_URL')
-        return redirect(HYDRA_LOGIN_URL)
+        return f(*args, **kwargs)
     return decorated_function
