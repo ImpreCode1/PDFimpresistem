@@ -346,32 +346,11 @@ def edit_pdf():
             import json
             try:
                 anotaciones = json.loads(anotaciones_json)
-                # zoom=2.0 es fijo en page_preview — independiente de resolución de pantalla
-                ZOOM = 2.0
-                canvas_scale = float(request.form.get('canvas_scale', 1.0))
-                factor = 1.0 / (canvas_scale * ZOOM)
-
-                # Paso 1: dibujar covers (rectángulos blancos) primero
                 for a in anotaciones:
-                    if a.get('tipo') != 'cover':
-                        continue
-                    pagina_num = max(1, int(a.get('pagina', 1)))
-                    if pagina_num > doc.page_count:
-                        continue
-                    page = doc[pagina_num - 1]
-                    x0 = a.get('x0_abs', 0) * factor
-                    y0 = a.get('y0_abs', 0) * factor
-                    x1 = a.get('x1_abs', 0) * factor
-                    y1 = a.get('y1_abs', 0) * factor
-                    rect = fitz.Rect(x0, y0, x1, y1)
-                    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
-
-                # Paso 2: insertar texto encima
-                for a in anotaciones:
-                    if a.get('tipo') == 'cover':
-                        continue
                     pagina_num = max(1, int(a.get('pagina', 1)))
                     texto = a.get('texto', '').strip()
+                    pos_x = max(0, min(95, int(a.get('pos_x', 10))))
+                    pos_y = max(0, min(95, int(a.get('pos_y', 50))))
                     fontsize = max(6, min(72, int(a.get('fontsize', 12))))
                     color_hex = a.get('color', '#000000')
 
@@ -379,12 +358,14 @@ def edit_pdf():
                         continue
 
                     page = doc[pagina_num - 1]
-                    x = a.get('x_abs', 0) * factor
-                    y = a.get('y_abs', 0) * factor
+                    ancho = page.rect.width
+                    alto = page.rect.height
+
+                    x = ancho * (pos_x / 100)
+                    y = alto * (pos_y / 100)
 
                     color = hex_a_rgb(color_hex)
                     page.insert_text(fitz.Point(x, y), texto, fontsize=fontsize, color=color)
-
             except (json.JSONDecodeError, ValueError) as e:
                 doc.close()
                 return f'Error al procesar anotaciones: {str(e)}', 400

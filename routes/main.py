@@ -4,11 +4,11 @@ from flask import Blueprint, request, render_template, send_from_directory, redi
 from utils import limpiar_carpeta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
-from auth import login_required
-import fitz
 from pdf2docx import Converter
+from auth import login_required, HYDRA_LOGIN_URL, validar_token, JWT_SECRET
+import jwt
 import os
-import re
+from datetime import datetime, timedelta
 
 main_bp = Blueprint('main', __name__)
 
@@ -21,12 +21,84 @@ def serve_logo(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# ─── Cierre de sesión ─────────────────────────────────────────────────────
+# ─── Ruta de autenticación SSO ────────────────────────────────────────────────
+@main_bp.route('/auth')
+def auth():
+    """
+    Punto de entrada del flujo SSO con Hydra IAM.
+
+    Hydra redirige aquí tras login exitoso con el JWT en la URL:
+        GET /auth?token=eyJhbGciOiJIUzI1NiJ9...
+
+    Flujo:
+        1. Extrae token del parámetro URL
+        2. Valida firma, issuer, audience y expiración
+        3. Guarda datos del usuario en la sesión Flask
+        4. Redirige al inicio SIN el token en la URL
+        5. Si hay error → redirige a Hydra para nuevo token
+    """
+    token = request.args.get('token')
+
+    # Modo desarrollo: auto-generar token si no existe
+    if not token:
+        if os.getenv('FLASK_ENV') == 'development' or os.getenv('DEBUG') == '1':
+            payload = {
+                'sub': 'dev-user',
+                'email': 'dev@impresistem.com',
+                'name': 'Desarrollador',
+                'roles': ['admin'],
+                'positionId': '1',
+                'platform': 'pdf',
+                'iss': 'hydra-iam',
+                'aud': 'internal-platforms',
+                'iat': datetime.utcnow(),
+                'exp': datetime.utcnow() + timedelta(minutes=15)
+            }
+            token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+        else:
+            return redirect(HYDRA_LOGIN_URL)
+
+    try:
+        payload = validar_token(token)
+
+        session['user'] = {
+            'sub': payload['sub'],
+            'email': payload['email'],
+            'name': payload['name'],
+            'roles': payload['roles'],
+            'positionId': payload.get('positionId'),
+            'platform': payload.get('platform'),
+        }
+        session.permanent = True
+
+        return redirect(url_for('main.index'))
+
+    except jwt.ExpiredSignatureError:
+        return redirect(HYDRA_LOGIN_URL)
+
+    except jwt.InvalidIssuerError:
+        return 'Token de emisor no autorizado.', 403
+
+    except jwt.InvalidAudienceError:
+        return 'Token no autorizado para esta plataforma.', 403
+
+    except jwt.InvalidSignatureError:
+        return 'Token con firma inválida.', 403
+
+    except jwt.DecodeError:
+        return 'Token malformado.', 400
+
+    except Exception as e:
+        print(f'[Auth] Error inesperado validando token: {e}')
+        return redirect(HYDRA_LOGIN_URL)
+
+
+# ─── Cierre de sesión SSO ─────────────────────────────────────────────────────
 @main_bp.route('/logout', methods=['POST'])
 def logout():
-    """Cierra la sesión local y redirige al inicio."""
+    """Cierra la sesión local y redirige a Hydra."""
     session.clear()
-    return redirect(url_for('main.index'))
+    return redirect(HYDRA_LOGIN_URL)
 
 
 # ─── Rutas de UI ──────────────────────────────────────────────────────────────
@@ -126,41 +198,16 @@ def convert():
     if file.filename == '' or not file.filename.endswith('.pdf'): # type: ignore
         return 'Por favor, suba un archivo PDF.', 400
 
-    # Sanitizar nombre: reemplazar caracteres especiales por guion bajo
-    nombre_base = os.path.splitext(file.filename)[0]
-    nombre_limpio = re.sub(r'[^\w\-.]', '_', nombre_base)
-    filename = secure_filename(nombre_limpio + '.pdf')
-
+    filename = secure_filename(file.filename) # type: ignore
     pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    # Validar antes de procesar
-    try:
-        doc = fitz.open(pdf_path)
-
-        if doc.is_encrypted:
-            doc.close()
-            return 'El PDF está protegido con contraseña. Desbloquéalo primero.', 400
-
-        total_paginas = doc.page_count
-        doc.close()
-
-        if total_paginas > 60:
-            return f'El PDF tiene {total_paginas} páginas. El límite es 30 páginas.', 400
-
-    except Exception as e:
-        return f'No se pudo leer el PDF: {str(e)}', 400
-
-    # Conservar nombre original limpio en el output
-    output_filename = nombre_limpio + '.docx'
+    output_filename = filename.rsplit('.', 1)[0] + '.docx'
     word_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
-    try:
-        cv = Converter(pdf_path)
-        cv.convert(word_path, start=0, end=None)
-        cv.close()
-    except Exception as e:
-        return f'Error al convertir el archivo: {str(e)}', 500
+    cv = Converter(pdf_path)
+    cv.convert(word_path, start=0, end=None) # type: ignore
+    cv.close()
 
     output_file_url = f'/download/{output_filename}'
-    return render_template('index.html', output_file=output_file_url, convirtiendo=False)
+    return render_template('index.html', output_file=output_file_url)
