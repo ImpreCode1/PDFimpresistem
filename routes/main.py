@@ -53,7 +53,7 @@ def reorder_ui():
 @main_bp.route('/organize_ui')
 @login_required
 def organize_ui():
-    """Renderiza la página de organizar PDF."""
+    """Renderiza la página de eliminar PDF."""
     return render_template('organize.html')
 
 
@@ -123,7 +123,7 @@ def convert():
 
     file = request.files['pdf_file']
 
-    if file.filename == '' or not file.filename.endswith('.pdf'):
+    if file.filename == '' or not file.filename.endswith('.pdf'): # type: ignore
         return 'Por favor, suba un archivo PDF.', 400
 
     # Sanitizar nombre: reemplazar caracteres especiales por guion bajo
