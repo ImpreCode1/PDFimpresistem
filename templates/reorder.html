@@ -3,170 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <title>Ordenar PDF — PDF Impresistem</title>
-    <link rel="stylesheet" href="/static/css/impresistem-ui.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         .thumbnail-card {
             cursor: grab;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-            position: relative;
-            transition: transform 0.15s, box-shadow 0.15s;
-            border: 2px solid transparent;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-        .thumbnail-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        .thumbnail-card:active {
+            cursor: grabbing;
         }
-        .thumbnail-card:active { cursor: grabbing; }
-        .thumbnail-card.sortable-ghost { opacity: 0.4; }
-        .thumbnail-card.sortable-chosen { box-shadow: 0 8px 24px rgba(0,0,0,0.2); border-color: rgba(245,197,24,0.5); }
-        .thumbnail-card img { width: 100%; display: block; }
-        .thumb-badges {
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 6px;
-            background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+        .thumbnail-card.sortable-ghost {
+            opacity: 0.5;
         }
-        .thumb-badge-orig {
-            font-size: 10px;
-            color: #fff;
-            background: rgba(80,80,80,0.85);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        .thumb-badge-pos {
-            font-size: 10px;
-            color: #fff;
-            background: rgba(37,99,235,0.85);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        #thumbnailGrid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 10px;
-            padding: 4px;
-        }
-        #emptyState {
-            text-align: center;
-            color: #aaa;
-            padding: 60px 20px;
-            font-size: 14px;
-        }
-        #previewContainer {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f0f2f5;
-            border-radius: 8px;
-            overflow: hidden;
-            min-height: 200px;
-        }
-        #previewImage { max-width: 100%; max-height: 100%; border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
-        #previewPlaceholder { font-size: 12px; color: #bbb; text-align: center; padding: 20px; }
-        .preview-panel {
-            width: 260px;
-            min-width: 260px;
-            background: #fff;
-            border-right: 1px solid rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            padding: 14px;
-            gap: 10px;
-        }
-        .preview-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+        .thumbnail-card.sortable-chosen {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
     </style>
 </head>
-<body>
-    <div id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <div class="logo-dot">im</div>
-                <span class="logo-label">PDF Impresistem</span>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Left Panel -->
+        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
+            <h1 class="text-xl font-bold text-gray-800 mb-4">Ordenar PDF</h1>
+            
+            <!-- Upload PDF -->
+            <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700">Archivo PDF</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center 
+                            hover:border-blue-400 transition-colors cursor-pointer"
+                     onclick="document.getElementById('pdf_file_reorder').click()">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" 
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-sm text-gray-500" id="reorder_filename">
+                        Seleccionar archivo PDF
+                    </p>
+                </div>
+                <input type="file" id="pdf_file_reorder" accept=".pdf" class="hidden">
             </div>
-            <h1 class="sidebar-title">Ordenar PDF</h1>
-        </div>
 
-        <!-- Archivo -->
-        <div class="sidebar-section">
-            <span class="section-label">Archivo PDF</span>
-            <input type="file" id="pdf_file_reorder" accept=".pdf" style="display:none;">
-            <div class="file-upload-zone" onclick="document.getElementById('pdf_file_reorder').click()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                </svg>
-                <p><strong id="reorder_filename">Seleccionar PDF</strong></p>
+            <!-- Page Count -->
+            <div id="pageCount" class="mb-4 text-sm text-gray-600 hidden">
+                <span id="pageCountNum">0</span> páginas
             </div>
-        </div>
 
-        <!-- Info -->
-        <div class="sidebar-section">
-            <span class="section-label">Documento</span>
-            <div class="info-box">
-                Arrastra las miniaturas para cambiar el orden de las páginas.
+            <!-- Hidden input for order -->
+            <input type="hidden" name="paginas" id="paginas_input">
+
+            <!-- Buttons - sticky to bottom -->
+            <div class="sticky bottom-0 bg-white pt-3 mt-auto">
+                <button type="button" id="applyBtn" onclick="applyOrder()" disabled
+                    class="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
+                    Aplicar orden
+                </button>
+                
+                <button type="button" id="resetBtn" onclick="resetOrder()" disabled
+                    class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                    Restablecer orden original
+                </button>
             </div>
-            <div id="pageCount" style="display:none;">
-                <span style="font-size:13px; color:rgba(255,255,255,0.6);">
-                    <span id="pageCountNum">0</span> páginas cargadas
-                </span>
-            </div>
-        </div>
 
-        <!-- Hidden inputs -->
-        <input type="hidden" name="paginas" id="paginas_input">
-
-        <div style="flex:1;"></div>
-
-        <div class="sidebar-footer">
-            <button type="button" id="applyBtn" onclick="applyOrder()" disabled class="btn-primary">
-                Aplicar orden
-            </button>
-            <button type="button" id="resetBtn" onclick="resetOrder()" disabled class="btn-secondary">
-                Restablecer orden original
-            </button>
-            <div id="downloadArea" style="display:none;" class="download-area">
-                <span class="download-title">PDF ordenado listo</span>
-                <a id="downloadLink" href="#" download class="download-link">Descargar PDF</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Preview panel -->
-    <div class="preview-panel">
-        <span class="preview-title">Vista previa</span>
-        <div id="previewContainer">
-            <p id="previewPlaceholder">Haz clic en una miniatura</p>
-            <img id="previewImage" style="display:none;" alt="Vista previa">
-        </div>
-    </div>
-
-    <!-- Main thumbnails area -->
-    <div id="mainArea">
-        <div class="main-topbar">
-            <span class="main-hint">Arrastra las miniaturas para reordenar las páginas</span>
-            <span class="main-info" id="statusInfo">Sin archivo</span>
-        </div>
-        <div class="main-wrapper" style="align-items:flex-start; padding:16px;">
-            <div style="width:100%;">
-                <div id="thumbnailGrid"></div>
-                <div id="emptyState">Sube un PDF para ver las miniaturas</div>
+            <!-- Download Link -->
+            <div id="downloadArea" class="mt-4 hidden">
+                <h3 class="text-lg font-bold text-green-700 mb-2">PDF ordenado</h3>
+                <a id="downloadLink" href="#" download class="text-blue-600 hover:underline">
+                    Descargar PDF ordenado
+                </a>
             </div>
         </div>
-        <div class="status-bar">
-            <div class="status-item"><div class="status-dot"></div> Listo</div>
-            <div class="status-item" id="statusPages">0 páginas</div>
+
+        <!-- Center Panel: Preview -->
+        <div class="w-1/3 border-r border-gray-200 p-5 overflow-auto flex flex-col">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Vista previa</h2>
+            <div id="previewContainer" class="flex-1 flex items-center justify-center bg-gray-100 rounded-xl">
+                <p id="previewPlaceholder" class="text-gray-400 text-center px-4">
+                    Haz clic en una miniatura para previsualizar
+                </p>
+                <img id="previewImage" class="hidden max-w-full max-h-full rounded-lg shadow" alt="Vista previa">
+            </div>
+        </div>
+
+        <!-- Right Panel: Thumbnails Grid -->
+        <div class="flex-1 p-5 overflow-auto">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Miniaturas (arrastra para reordenar)</h2>
+            <div id="thumbnailGrid" class="grid grid-cols-3 gap-4">
+                <!-- Thumbnails will be inserted here -->
+            </div>
+            <div id="emptyState" class="text-center text-gray-400 py-20">
+                Sube un PDF para ver las miniaturas
+            </div>
         </div>
     </div>
 
@@ -210,14 +138,12 @@
                     thumbnails = data.thumbnails;
                     originalOrder = thumbnails.map((_, i) => i + 1);
                     renderThumbnails();
-
+                    
                     pageCountNum.textContent = thumbnails.length;
-                    document.getElementById('pageCount').style.display = 'block';
+                    pageCount.classList.remove('hidden');
                     applyBtn.disabled = false;
                     resetBtn.disabled = false;
-                    document.getElementById('emptyState').style.display = 'none';
-                    document.getElementById('statusPages').textContent = thumbnails.length + ' páginas';
-                    document.getElementById('statusInfo').textContent = pdfInput.files[0].name;
+                    emptyState.classList.add('hidden');
                 }
             } catch (e) {
                 console.error('Error loading thumbnails:', e);
@@ -226,36 +152,40 @@
 
         function renderThumbnails() {
             thumbnailGrid.innerHTML = '';
-
+            
             thumbnails.forEach((thumb, index) => {
                 const card = document.createElement('div');
-                card.className = 'thumbnail-card';
+                card.className = 'thumbnail-card bg-white rounded-lg shadow overflow-hidden relative';
                 card.dataset.original = index + 1;
                 card.dataset.position = index + 1;
-
+                
                 const img = document.createElement('img');
                 img.src = thumb;
+                img.className = 'w-full h-32 object-cover';
                 img.alt = 'Página ' + (index + 1);
-
+                
                 const badges = document.createElement('div');
-                badges.className = 'thumb-badges';
-
+                badges.className = 'absolute bottom-0 left-0 right-0 flex justify-between p-2 bg-gradient-to-t from-black/60 to-transparent';
+                
                 const originalBadge = document.createElement('span');
-                originalBadge.className = 'thumb-badge-orig';
+                originalBadge.className = 'text-xs text-white bg-gray-600/80 px-2 py-1 rounded';
                 originalBadge.textContent = 'P' + (index + 1);
-
+                
                 const positionBadge = document.createElement('span');
-                positionBadge.className = 'thumb-badge-pos';
+                positionBadge.className = 'text-xs text-white bg-blue-600/80 px-2 py-1 rounded';
                 positionBadge.dataset.for = 'position';
                 positionBadge.textContent = '#' + (index + 1);
-
+                
                 badges.appendChild(originalBadge);
                 badges.appendChild(positionBadge);
-
+                
                 card.appendChild(img);
                 card.appendChild(badges);
-
-                card.addEventListener('click', function() { showPreview(thumb); });
+                
+                card.addEventListener('click', function() {
+                    showPreview(thumb);
+                });
+                
                 thumbnailGrid.appendChild(card);
             });
             
@@ -274,9 +204,9 @@
         }
 
         function showPreview(thumbSrc) {
-            previewPlaceholder.style.display = 'none';
+            previewPlaceholder.classList.add('hidden');
             previewImage.src = thumbSrc;
-            previewImage.style.display = 'block';
+            previewImage.classList.remove('hidden');
         }
 
         function updatePageOrderDisplay(evt) {
@@ -334,7 +264,17 @@
                     if (link) {
                         downloadLink.href = link.getAttribute('href');
                         downloadLink.download = link.download;
-                        document.getElementById('downloadArea').style.display = 'block';
+                        downloadArea.classList.remove('hidden');
+                    } else {
+                        const text = doc.querySelector('body').textContent;
+                        if (text.includes('descargar')) {
+                            const urlMatch = text.match(/href="([^"]+)"/);
+                            if (urlMatch) {
+                                downloadLink.href = urlMatch[1];
+                                downloadLink.textContent = 'Descargar PDF ordenado';
+                                downloadArea.classList.remove('hidden');
+                            }
+                        }
                     }
                 }
             } catch (e) {
