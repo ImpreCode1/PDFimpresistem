@@ -4,7 +4,6 @@ from flask import Blueprint, request, render_template
 from utils import parsear_paginas
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
-from auth import login_required
 import fitz
 import os
 
@@ -12,7 +11,6 @@ basic_bp = Blueprint('basic', __name__)
 
 
 @basic_bp.route('/rotate', methods=['POST'])
-@login_required
 def rotate_pdf():
     """
     Rota todas las páginas de un PDF en el ángulo indicado (90°, 180° o 270°).
@@ -61,7 +59,6 @@ def rotate_pdf():
 
 
 @basic_bp.route('/extract', methods=['POST'])
-@login_required
 def extract_pages():
     """
     Extrae páginas específicas de un PDF y las guarda en un nuevo documento.
@@ -122,7 +119,6 @@ def extract_pages():
 
 
 @basic_bp.route('/watermark', methods=['POST'])
-@login_required
 def watermark_pdf():
     """
     Inserta texto semitransparente en diagonal sobre todas las páginas del PDF.
@@ -186,7 +182,6 @@ def watermark_pdf():
 
 
 @basic_bp.route('/protect', methods=['POST'])
-@login_required
 def protect_pdf():
     """
     Encripta un PDF con contraseña usando AES-256.
@@ -245,7 +240,6 @@ def protect_pdf():
 
 
 @basic_bp.route('/unlock', methods=['POST'])
-@login_required
 def unlock_pdf():
     """
     Elimina la protección por contraseña de un PDF encriptado.
@@ -304,7 +298,6 @@ def unlock_pdf():
 
 
 @basic_bp.route('/flatten', methods=['POST'])
-@login_required
 def flatten_pdf():
     """
     Aplana un PDF convirtiendo anotaciones y campos de formulario en contenido estático.

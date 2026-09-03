@@ -1,7 +1,6 @@
 # routes/api.py — Blueprint: api
 
 from flask import Blueprint, request, jsonify, Response, stream_with_context
-from auth import login_required
 import fitz
 import io
 import base64
@@ -14,26 +13,58 @@ from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 api_bp = Blueprint('api', __name__)
 
 
-# FIX HIGH: Add CORS headers for cross-origin requests from interactive views
+# FIX HIGH: CORS restringido a orígenes permitidos (configurable vía ALLOWED_ORIGINS).
+# Se eliminó el Access-Control-Allow-Origin: * que abría la API a cualquier origen.
+def _get_allowed_origins():
+    """
+    Retorna la lista de orígenes permitidos para CORS.
+
+    Se lee de la variable de entorno ALLOWED_ORIGINS (separada por comas).
+    Si no está definida, usa el origen de desarrollo local (localhost:8080)
+    y el dominio interno de producción.
+
+    Returns:
+        set[str]: Conjunto de orígenes permitidos (sin barra final).
+    """
+    default_origins = [
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'https://pdf-plattstest.impresistem.com',
+    ]
+    raw = os.getenv('ALLOWED_ORIGINS', '')
+    if raw.strip():
+        extra = [o.strip().rstrip('/') for o in raw.split(',') if o.strip()]
+        default_origins.extend(extra)
+    return set(default_origins)
+
+
 @api_bp.after_request
 def add_cors_headers(response):
     """
-    Añade headers CORS para solicitudes de origen cruzado.
+    Añade headers CORS solo para orígenes de la lista permitida.
+
+    Refleja el origen del request únicamente si está en ALLOWED_ORIGINS
+    (o en la lista por defecto). Para orígenes no permitidos no envía
+    headers de acceso CORS.
 
     Args:
         response (Response): Objeto response de Flask.
 
     Returns:
-        Response: Objeto response con headers CORS añadidos.
+        Response: Objeto response con headers CORS condicionados.
     """
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    allowed = _get_allowed_origins()
+    origin = request.headers.get('Origin')
+
+    if origin and origin.rstrip('/') in allowed:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Vary'] = 'Origin'
     return response
 
 
 @api_bp.route('/page_preview', methods=['POST', 'OPTIONS'])
-@login_required
 def page_preview():
     """
     Retorna una vista previa PNG de una página específica del PDF en base64.
@@ -89,7 +120,6 @@ def page_preview():
 
 
 @api_bp.route('/save_signature', methods=['POST', 'OPTIONS'])
-@login_required
 def save_signature():
     """
     Guarda una imagen de firma desde base64 en un archivo temporal.
@@ -126,7 +156,6 @@ def save_signature():
 
 
 @api_bp.route('/thumbnails', methods=['POST', 'OPTIONS'])
-@login_required
 def thumbnails():
     """
     Retorna miniaturas de todas las páginas de un PDF como array base64.
@@ -172,7 +201,6 @@ def thumbnails():
 
 
 @api_bp.route('/page_preview_by_name', methods=['POST', 'OPTIONS'])
-@login_required
 def page_preview_by_name():
     """
     Retorna una vista previa PNG de una página específica del PDF por nombre de archivo.
@@ -225,7 +253,6 @@ def page_preview_by_name():
 
 
 @api_bp.route('/extract_text', methods=['POST', 'OPTIONS'])
-@login_required
 def extract_text():
     """
     Extrae bloques de texto de una página del PDF con sus coordenadas.

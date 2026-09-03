@@ -6,6 +6,7 @@ conversión de colores y otras operaciones auxiliares de procesamiento de PDF.""
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 import shutil
 import os
+import platform
 
 
 def limpiar_carpeta(carpeta):
@@ -36,6 +37,45 @@ def limpiar_archivos_programada():
     limpiar_carpeta(UPLOAD_FOLDER)
     limpiar_carpeta(OUTPUT_FOLDER)
     print('[Limpieza] Limpieza completada.')
+
+
+def eliminar_motw(filepath):
+    """
+    Elimina el Mark of the Web (MOTW) de un archivo en sistemas Windows.
+
+    Windows añade un Alternate Data Stream (ADS) llamado 'Zone.Identifier'
+    a los archivos descargados de Internet u otras zonas de seguridad.
+    Esta marca hace que Office/el visor de PDF muestren advertencias de
+    "archivo no seguro" y, desde la actualización de octubre 2025, bloquee
+    la vista previa en el Explorador.
+
+    Límite de alcance: esta función solo limpia el archivo en el servidor.
+    El navegador del cliente puede volver a marcar el archivo como "de
+    Internet" al descargarlo, dependiendo de la configuración de zona de
+    seguridad de Windows de cada equipo. Si el problema persiste, evaluar
+    agregar el dominio a la zona de Intranet local vía GPO.
+
+    Args:
+        filepath (str): Ruta absoluta del archivo a limpiar.
+
+    Returns:
+        None: La función no retorna nada. Es un no-op silencioso si el
+        sistema no es Windows, el archivo no existe, no tiene ADS o el
+        proceso no tiene permisos para eliminarlo.
+    """
+    # El MOTW es una característica exclusiva de NTFS en Windows.
+    # En Linux/macOS (ej: Docker) no aplica — no-op silencioso.
+    if platform.system() != 'Windows':
+        return
+
+    ads_path = filepath + ':Zone.Identifier'
+    try:
+        if os.path.exists(ads_path):
+            os.remove(ads_path)
+    except (OSError, PermissionError):
+        # No tiene ADS, o el proceso no puede eliminarlo (archivo en uso,
+        # permisos insuficientes). Se ignora silenciosamente.
+        pass
 
 
 def parsear_paginas(texto, total_paginas):

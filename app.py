@@ -12,20 +12,73 @@ from routes.advanced import advanced_bp
 from routes.api import api_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import pytz
 import atexit
 
 app = Flask(__name__)
-# FIX HIGH: Missing SECRET_KEY causes session inconsistencies across environments
-app.secret_key = os.getenv('SECRET_KEY', 'PDFimpresistem-dev-key-2024')
+
+# SECRET_KEY debe leerse de la variable de entorno. Sin fallback hardcoded:
+# si no está definida, se lanza un error explícito en lugar de usar una clave
+# predecible que pondría en riesgo las sesiones.
+_secret_key = os.environ.get('SECRET_KEY')
+if not _secret_key:
+    raise RuntimeError(
+        'SECRET_KEY no está definida. Configúrala en el entorno (variable '
+        'SECRET_KEY) antes de iniciar la aplicación.'
+    )
+app.secret_key = _secret_key
+
+# SESSION_COOKIE_SECURE se activa solo en producción (HTTPS). En desarrollo
+# local (FLASK_ENV != production) se desactiva para permitir HTTP.
+es_produccion = os.getenv('FLASK_ENV') == 'production'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_PERMANENT'] = True
 app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
 app.config['SESSION_COOKIE_NAME'] = 'pdf_session'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+app.config['SESSION_COOKIE_SECURE'] = es_produccion
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
+
+# Flask-Limiter: límites por defecto para todas las rutas. Las rutas de
+# conversión procesan archivos grandes y consumen CPU/IO, por lo que el
+# límite diario y por hora protege el servidor de abuso o uso excesivo.
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=['200 per day', '50 per hour'],
+)
+
+
+@app.after_request
+def add_security_headers(response):
+    """
+    Añade headers de seguridad base a todas las respuestas.
+
+    Args:
+        response (Response): Objeto response de Flask.
+
+    Returns:
+        Response: Objeto response con headers de seguridad añadidos.
+    """
+    # CSP: restringe fuentes de scripts, estilos, imágenes y conexiones.
+    # Se permiten los CDN usados por las plantillas (tailwind, pdf-lib,
+    # jszip, sortablejs) tanto en script como en style.
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' "
+        "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' data:; "
+        "connect-src 'self'"
+    )
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    return response
+
 
 # Register blueprints
 app.register_blueprint(main_bp)
