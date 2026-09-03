@@ -15,11 +15,7 @@ WORKDIR /app
 
 # 4) Instalar dependencias del sistema mínimas para compilar/librerías
 #    libGL para opencv-headless no es necesario; se deja capa lista por si se requiere build
-#    libreoffice-core + libreoffice-writer se instalan para la conversión PPTX -> PDF
-#    (vía subprocess --headless --convert-to pdf)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libreoffice-core \
-    libreoffice-writer \
     && rm -rf /var/lib/apt/lists/*
 
 # 5) Copiar solo requirements primero para aprovechar cache de Docker

@@ -10,7 +10,6 @@ from pptx import Presentation
 from pptx.util import Inches
 import os
 import re
-import subprocess
 import io
 
 main_bp = Blueprint('main', __name__)
@@ -258,75 +257,8 @@ def pdf_to_pptx():
     return render_template('index.html', output_file=f'/download/{output_filename}')
 
 
-@main_bp.route('/pptx_to_pdf', methods=['POST'])
-def pptx_to_pdf():
-    """
-    Convierte una presentación PowerPoint (.pptx) a PDF.
-
-    Invoca LibreOffice en modo headless para realizar la conversión,
-    preservando el texto y elementos editables como contenido del PDF.
-
-    Args:
-        pptx_file (file): Archivo PPTX a convertir.
-
-    Returns:
-        Response: Template con enlace al archivo PDF generado.
-
-    Raises:
-        400: Si no se selecciona archivo o no es PPTX.
-        500: Si LibreOffice falla, se agota el tiempo o no genera el PDF.
-    """
-    if 'pptx_file' not in request.files:
-        return 'No se ha seleccionado un archivo.', 400
-
-    file = request.files['pptx_file']
-
-    if file.filename == '' or not file.filename.lower().endswith('.pptx'):
-        return 'Por favor, suba un archivo PPTX.', 400
-
-    pptx_filename = secure_filename(file.filename)
-    pptx_path = os.path.join(UPLOAD_FOLDER, pptx_filename)
-    file.save(pptx_path)
-
-    nombre_base = os.path.splitext(pptx_filename)[0]
-    output_filename = nombre_base + '.pdf'
-    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-    # Ruta del binario de LibreOffice. En Linux (Docker) está en PATH;
-    # en Windows se busca en la ubicación típica de instalación.
-    libreoffice_bin = 'libreoffice'
-    if os.name == 'nt':
-        rutas_windows = [
-            r'C:\Program Files\LibreOffice\program\soffice.exe',
-            r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
-        ]
-        for ruta in rutas_windows:
-            if os.path.exists(ruta):
-                libreoffice_bin = ruta
-                break
-
-    try:
-        subprocess.run(
-            [
-                libreoffice_bin,
-                '--headless',
-                '--convert-to', 'pdf',
-                '--outdir', OUTPUT_FOLDER,
-                pptx_path
-            ],
-            check=True,
-            timeout=120,
-            capture_output=True
-        )
-    except subprocess.TimeoutExpired:
-        return 'La conversión tardó demasiado. Intenta con un archivo más pequeño.', 500
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        return f'No se pudo convertir el archivo con LibreOffice: {str(e)}', 500
-
-    if not os.path.exists(output_path):
-        return 'LibreOffice no generó el PDF esperado.', 500
-
-    # Limpiar Mark of the Web del archivo generado (no-op en Linux/Docker)
-    eliminar_motw(output_path)
-
-    return render_template('index.html', output_file=f'/download/{output_filename}')
+# NOTA: No existe ruta /pptx_to_pdf (conversión PPTX -> PDF) a propósito.
+# La conversión a PDF de presentaciones se cubre de forma nativa con
+# PowerPoint de escritorio ("Guardar como > PDF"), y así se evita la
+# dependencia de LibreOffice (--headless --convert-to pdf), que no está
+# instalado ni en plattstest ni en producción.
