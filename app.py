@@ -30,6 +30,15 @@ if not _secret_key:
     )
 app.secret_key = _secret_key
 
+# JWT_SECRET se valida al inicio para fallo rápido si no está definida.
+# Se lee de variable de entorno sin fallback, igual que SECRET_KEY.
+_jwt_secret = os.environ.get('JWT_SECRET')
+if not _jwt_secret:
+    raise RuntimeError(
+        'JWT_SECRET no está definida. Configúrala en el entorno (variable '
+        'JWT_SECRET) antes de iniciar la aplicación.'
+    )
+
 # SESSION_COOKIE_SECURE se activa solo en producción (HTTPS). En desarrollo
 # local (FLASK_ENV != production) se desactiva para permitir HTTP.
 es_produccion = os.getenv('FLASK_ENV') == 'production'

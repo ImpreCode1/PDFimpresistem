@@ -1,6 +1,8 @@
 # routes/main.py — Blueprint: main
 
 from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, session
+from auth import validar_token, login_required
+import jwt
 from utils import limpiar_carpeta, eliminar_motw
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
@@ -24,15 +26,72 @@ def serve_logo(filename):
 
 
 # ─── Cierre de sesión ─────────────────────────────────────────────────────
-@main_bp.route('/logout', methods=['POST'])
+@main_bp.route('/logout')
 def logout():
-    """Cierra la sesión local y redirige al inicio."""
+    """
+    Cierra la sesión Flask y redirige al login de Hydra Hub.
+
+    Returns:
+        Response: Redirect al login central de Impresistem.
+    """
     session.clear()
-    return redirect(url_for('main.index'))
+    return redirect("https://central.impresistem.com/login")
+
+
+# ─── Autenticación SSO Hydra ─────────────────────────────────────────────
+@main_bp.route('/auth')
+def auth():
+    """
+    Recibe el JWT de Hydra Hub como parámetro de URL, lo valida,
+    crea la sesión Flask con los datos del payload y redirige
+    limpiando la URL.
+
+    Args (query params):
+        token (str): JWT firmado HS256 proporcionado por Hydra Hub.
+
+    Returns:
+        Response: Redirect a la página principal tras crear la sesión.
+
+    Raises:
+        400: Si el parámetro token falta o el JWT es inválido/expirado.
+    """
+    token = request.args.get("token")
+    if not token:
+        return "Falta el parámetro token.", 400
+    try:
+        payload = validar_token(token)
+    except jwt.ExpiredSignatureError:
+        return "El token ha expirado. Solicita uno nuevo.", 401
+    except jwt.InvalidTokenError as e:
+        return f"Token inválido: {str(e)}", 401
+
+    session.permanent = True
+    session["user"] = {
+        "sub": payload["sub"],
+        "email": payload["email"],
+        "name": payload["name"],
+        "roles": payload.get("roles", []),
+        "positionId": payload.get("positionId"),
+        "platform": payload.get("platform"),
+    }
+    return redirect(url_for("main.index"))
+
+
+@main_bp.route('/login')
+def login_alias():
+    """
+    Alias de /auth para compatibilidad con el launcher del
+    Sistema de Gestión de Accesos.
+
+    Returns:
+        Response: Redirect a /auth con los mismos query params.
+    """
+    return redirect(url_for("main.auth", **request.args))
 
 
 # ─── Rutas de UI ──────────────────────────────────────────────────────────────
 @main_bp.route('/')
+@login_required
 def index():
     """Renderiza la página principal con todas las tarjetas de funciones."""
     return render_template('index.html', output_file=None)
@@ -45,36 +104,42 @@ def index_alt():
 
 
 @main_bp.route('/reorder_ui')
+@login_required
 def reorder_ui():
     """Renderiza la página de ordenar PDF."""
     return render_template('reorder.html')
 
 
 @main_bp.route('/organize_ui')
+@login_required
 def organize_ui():
     """Renderiza la página de organizar PDF."""
     return render_template('organize.html')
 
 
 @main_bp.route('/unir_ui')
+@login_required
 def unir_ui():
     """Renderiza la página de unir PDFs."""
     return render_template('unir.html')
 
 
 @main_bp.route('/crop_ui')
+@login_required
 def crop_ui():
     """Renderiza la página de crop PDF."""
     return render_template('crop.html')
 
 
 @main_bp.route('/edit_ui')
+@login_required
 def edit_ui():
     """Renderiza la página de editar PDF."""
     return render_template('edit.html')
 
 
 @main_bp.route('/cerrar_sesion', methods=['POST'])
+@login_required
 def cerrar_sesion():
     """
     Limpieza manual de archivos activada por el usuario.
@@ -87,6 +152,7 @@ def cerrar_sesion():
 
 
 @main_bp.route('/download/<path:filename>')
+@login_required
 def download_file(filename):
     """
     Sirve un archivo desde la carpeta /outputs para descarga.
@@ -120,6 +186,7 @@ def download_file(filename):
 
 
 @main_bp.route('/convert', methods=['POST'])
+@login_required
 def convert():
     """
     Convierte un PDF a formato Word (.docx) usando pdf2docx.

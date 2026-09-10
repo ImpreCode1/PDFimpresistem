@@ -1,6 +1,7 @@
 # routes/api.py — Blueprint: api
 
 from flask import Blueprint, request, jsonify, Response, stream_with_context
+from auth import login_required
 import fitz
 import io
 import base64
@@ -65,6 +66,7 @@ def add_cors_headers(response):
 
 
 @api_bp.route('/page_preview', methods=['POST', 'OPTIONS'])
+@login_required
 def page_preview():
     """
     Retorna una vista previa PNG de una página específica del PDF en base64.
@@ -120,6 +122,7 @@ def page_preview():
 
 
 @api_bp.route('/save_signature', methods=['POST', 'OPTIONS'])
+@login_required
 def save_signature():
     """
     Guarda una imagen de firma desde base64 en un archivo temporal.
@@ -156,6 +159,7 @@ def save_signature():
 
 
 @api_bp.route('/thumbnails', methods=['POST', 'OPTIONS'])
+@login_required
 def thumbnails():
     """
     Retorna miniaturas de todas las páginas de un PDF como array base64.
@@ -201,6 +205,7 @@ def thumbnails():
 
 
 @api_bp.route('/page_preview_by_name', methods=['POST', 'OPTIONS'])
+@login_required
 def page_preview_by_name():
     """
     Retorna una vista previa PNG de una página específica del PDF por nombre de archivo.
@@ -253,6 +258,7 @@ def page_preview_by_name():
 
 
 @api_bp.route('/extract_text', methods=['POST', 'OPTIONS'])
+@login_required
 def extract_text():
     """
     Extrae bloques de texto de una página del PDF con sus coordenadas.
