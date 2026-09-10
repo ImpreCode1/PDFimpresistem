@@ -1,15 +1,18 @@
 # routes/main.py — Blueprint: main
 
 from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, session
-from utils import limpiar_carpeta
+from auth import validar_token, login_required
+import jwt
+from utils import limpiar_carpeta, eliminar_motw
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
-from pdf2docx import Converter
 import fitz
-from auth import login_required, HYDRA_LOGIN_URL, validar_token, JWT_SECRET
-import jwt
+from pdf2docx import Converter
+from pptx import Presentation
+from pptx.util import Inches
 import os
-from datetime import datetime, timedelta
+import re
+import io
 
 main_bp = Blueprint('main', __name__)
 
@@ -22,94 +25,68 @@ def serve_logo(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# ─── Ruta de autenticación SSO ────────────────────────────────────────────────
+# ─── Cierre de sesión ─────────────────────────────────────────────────────
+@main_bp.route('/logout')
+def logout():
+    """
+    Cierra la sesión Flask y redirige al login de Hydra Hub.
+
+    Returns:
+        Response: Redirect al login central de Impresistem.
+    """
+    session.clear()
+    return redirect("https://central.impresistem.com/login")
+
+
+# ─── Autenticación SSO Hydra ─────────────────────────────────────────────
 @main_bp.route('/auth')
 def auth():
     """
-    Punto de entrada del flujo SSO con Hydra IAM.
+    Recibe el JWT de Hydra Hub como parámetro de URL, lo valida,
+    crea la sesión Flask con los datos del payload y redirige
+    limpiando la URL.
 
-    Hydra redirige aquí tras login exitoso con el JWT en la URL:
-        GET /auth?token=eyJhbGciOiJIUzI1NiJ9...
+    Args (query params):
+        token (str): JWT firmado HS256 proporcionado por Hydra Hub.
 
-    Flujo:
-        1. Extrae token del parámetro URL
-        2. Valida firma, issuer, audience y expiración
-        3. Guarda datos del usuario en la sesión Flask
-        4. Redirige al inicio SIN el token en la URL
-        5. Si hay error → redirige a Hydra para nuevo token
+    Returns:
+        Response: Redirect a la página principal tras crear la sesión.
+
+    Raises:
+        400: Si el parámetro token falta o el JWT es inválido/expirado.
     """
-    token = request.args.get('token')
-
-    # Modo desarrollo: auto-generar token si no existe
+    token = request.args.get("token")
     if not token:
-        if os.getenv('FLASK_ENV') == 'development' or os.getenv('DEBUG') == '1':
-            payload = {
-                'sub': 'dev-user',
-                'email': 'dev@impresistem.com',
-                'name': 'Desarrollador',
-                'roles': ['admin'],
-                'positionId': '1',
-                'platform': 'pdf',
-                'iss': 'hydra-iam',
-                'aud': 'internal-platforms',
-                'iat': datetime.utcnow(),
-                'exp': datetime.utcnow() + timedelta(minutes=15)
-            }
-            token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
-        else:
-            return redirect(HYDRA_LOGIN_URL)
-
+        return "Falta el parámetro token.", 400
     try:
         payload = validar_token(token)
-
-        session['user'] = {
-            'sub': payload['sub'],
-            'email': payload['email'],
-            'name': payload['name'],
-            'roles': payload['roles'],
-            'positionId': payload.get('positionId'),
-            'platform': payload.get('platform'),
-        }
-        session.permanent = True
-
-        return redirect(url_for('main.index'))
-
     except jwt.ExpiredSignatureError:
-        return redirect(HYDRA_LOGIN_URL)
+        return "El token ha expirado. Solicita uno nuevo.", 401
+    except jwt.InvalidTokenError as e:
+        return f"Token inválido: {str(e)}", 401
 
-    except jwt.InvalidIssuerError:
-        return 'Token de emisor no autorizado.', 403
+    session.permanent = True
+    session["user"] = {
+        "sub": payload["sub"],
+        "email": payload["email"],
+        "name": payload["name"],
+        "roles": payload.get("roles", []),
+        "positionId": payload.get("positionId"),
+        "platform": payload.get("platform"),
+    }
+    return redirect(url_for("main.index"))
 
-    except jwt.InvalidAudienceError:
-        return 'Token no autorizado para esta plataforma.', 403
 
-    except jwt.InvalidSignatureError:
-        return 'Token con firma inválida.', 403
-
-    except jwt.DecodeError:
-        return 'Token malformado.', 400
-
-    except Exception as e:
-        print(f'[Auth] Error inesperado validando token: {e}')
-        return redirect(HYDRA_LOGIN_URL)
-
-# ─── Alias de compatibilidad con el lanzador de "Sistema de Gestión de Accesos" ──
 @main_bp.route('/login')
 def login_alias():
     """
-    El panel central asume la convención /login de ImpreForms para todas
-    las plataformas. PDFimpresistem usa /auth como callback real de SSO
-    (ver función auth() arriba) — este alias solo reenvía a esa misma lógica,
-    para no duplicar la validación de token ni el manejo de sesión.
-    """
-    return auth()
+    Alias de /auth para compatibilidad con el launcher del
+    Sistema de Gestión de Accesos.
 
-# ─── Cierre de sesión SSO ─────────────────────────────────────────────────────
-@main_bp.route('/logout', methods=['POST'])
-def logout():
-    """Cierra la sesión local y redirige a Hydra."""
-    session.clear()
-    return redirect(HYDRA_LOGIN_URL)
+    Returns:
+        Response: Redirect a /auth con los mismos query params.
+    """
+    return redirect(url_for("main.auth", **request.args))
 
 
 # ─── Rutas de UI ──────────────────────────────────────────────────────────────
@@ -180,12 +157,31 @@ def download_file(filename):
     """
     Sirve un archivo desde la carpeta /outputs para descarga.
 
+    Valida que el nombre no contenga rutas relativas ("..") ni separadores
+    de directorio para prevenir path traversal. También elimina el Mark of
+    the Web (MOTW) del archivo servido en sistemas Windows.
+
     Args:
-        filename (str): Nombre del archivo a descargar.
+        filename (str): Nombre del archivo a descargar (solo nombre base).
 
     Returns:
         Response: Archivo como adjunto descargable.
+
+    Raises:
+        400: Si el nombre contiene "..", "/" o "\" (intento de traversal).
     """
+    # FIX HIGH: validación de path traversal — solo nombre base permitido
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return 'Nombre de archivo inválido.', 400
+
+    # Confirmar que la ruta resultante está dentro de OUTPUT_FOLDER
+    ruta_absoluta = os.path.realpath(os.path.join(OUTPUT_FOLDER, filename))
+    if not ruta_absoluta.startswith(os.path.realpath(OUTPUT_FOLDER) + os.sep):
+        return 'Nombre de archivo inválido.', 400
+
+    # Eliminar Mark of the Web del archivo (no-op en Linux/Docker)
+    eliminar_motw(ruta_absoluta)
+
     return send_from_directory(OUTPUT_FOLDER, filename)
 
 
@@ -210,7 +206,6 @@ def convert():
         return 'Por favor, suba un archivo PDF.', 400
 
     # Sanitizar nombre: reemplazar caracteres especiales por guion bajo
-    import re
     nombre_base = os.path.splitext(file.filename)[0]
     nombre_limpio = re.sub(r'[^\w\-.]', '_', nombre_base)
     filename = secure_filename(nombre_limpio + '.pdf')
@@ -248,3 +243,89 @@ def convert():
 
     output_file_url = f'/download/{output_filename}'
     return render_template('index.html', output_file=output_file_url, convirtiendo=False)
+
+
+@main_bp.route('/pdf_to_pptx', methods=['POST'])
+def pdf_to_pptx():
+    """
+    Convierte un PDF a presentación PowerPoint (.pptx).
+
+    Cada página del PDF se renderiza como imagen PNG a 200 DPI y se inserta
+    como una diapositiva de tamaño carta en el PPTX generado.
+
+    IMPORTANTE: El resultado NO es texto editable. Cada diapositiva es una
+    imagen a página completa del PDF original. No se recupera ni texto ni
+    elementos vectoriales.
+
+    Args:
+        pdf_file (file): Archivo PDF a convertir.
+
+    Returns:
+        Response: Template con enlace al archivo PPTX generado.
+
+    Raises:
+        400: Si no se selecciona archivo, no es PDF o está encriptado.
+        500: Si ocurre un error durante el renderizado o la generación.
+    """
+    if 'pdf_file' not in request.files:
+        return 'No se ha seleccionado un archivo.', 400
+
+    file = request.files['pdf_file']
+
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return 'Por favor, suba un archivo PDF.', 400
+
+    nombre_base = os.path.splitext(file.filename)[0]
+    nombre_limpio = re.sub(r'[^\w\-.]', '_', nombre_base)
+    pdf_filename = secure_filename(nombre_limpio + '.pdf')
+    pdf_path = os.path.join(UPLOAD_FOLDER, pdf_filename)
+    file.save(pdf_path)
+
+    output_filename = nombre_limpio + '.pptx'
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        if doc.is_encrypted:
+            doc.close()
+            return 'El PDF está protegido con contraseña. Desbloquéalo primero.', 400
+
+        prs = Presentation()
+        # Tamaño carta (8.5x11 pulgadas) en formato 16:9 horizontal
+        prs.slide_width = Inches(13.333)
+        prs.slide_height = Inches(7.5)
+        blank_layout = prs.slide_layouts[6]
+
+        for page in doc:
+            # Renderizar la página a PNG a 200 DPI en memoria
+            pixmap = page.get_pixmap(dpi=200)
+            img_bytes = pixmap.tobytes('png')
+            img_io = io.BytesIO(img_bytes)
+
+            slide = prs.slides.add_slide(blank_layout)
+            slide.shapes.add_picture(
+                img_io,
+                left=0,
+                top=0,
+                width=prs.slide_width,
+                height=prs.slide_height
+            )
+
+        doc.close()
+        prs.save(output_path)
+
+    except Exception as e:
+        return f'Error al convertir el archivo: {str(e)}', 500
+
+    # Limpiar Mark of the Web del archivo generado (no-op en Linux/Docker)
+    eliminar_motw(output_path)
+
+    return render_template('index.html', output_file=f'/download/{output_filename}')
+
+
+# NOTA: No existe ruta /pptx_to_pdf (conversión PPTX -> PDF) a propósito.
+# La conversión a PDF de presentaciones se cubre de forma nativa con
+# PowerPoint de escritorio ("Guardar como > PDF"), y así se evita la
+# dependencia de LibreOffice (--headless --convert-to pdf), que no está
+# instalado ni en plattstest ni en producción.

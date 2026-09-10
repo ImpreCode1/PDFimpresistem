@@ -1,0 +1,12 @@
+# Evitar copiar al contexto de build
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+.git/
+.gitignore
+.env
+uploads/
+outputs/
+*.log

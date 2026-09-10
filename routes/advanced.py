@@ -1,10 +1,10 @@
 # routes/advanced.py — Blueprint: advanced
 
 from flask import Blueprint, request, render_template, redirect, url_for, send_file
+from auth import login_required
 from werkzeug.utils import secure_filename
 from utils import parsear_paginas, hex_a_rgb
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
-from auth import login_required
 import fitz
 import os
 import io

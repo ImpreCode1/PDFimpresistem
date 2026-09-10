@@ -1,0 +1,16 @@
+# docker-compose.yml — PDFimpresistem
+# Entorno Docker adicional; no reemplaza el despliegue Apache/mod_wsgi actual (app.wsgi)
+
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+    # Persistencia de archivos subidos/generados
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+    restart: unless-stopped

@@ -1,10 +1,10 @@
 # routes/basic.py — Blueprint: basic
 
 from flask import Blueprint, request, render_template
+from auth import login_required
 from utils import parsear_paginas
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
-from auth import login_required
 import fitz
 import os
 
