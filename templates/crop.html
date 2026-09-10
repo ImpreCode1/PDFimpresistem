@@ -3,106 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <title>Recortar PDF — PDF Impresistem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         #cropCanvas {
-            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 4px;
+            display: block;
+            width: 100%;
+        }
+        .warning-box {
+            background: rgba(220,38,38,0.08);
+            border: 1px solid rgba(220,38,38,0.2);
+            border-radius: 7px;
+            padding: 9px 11px;
+            font-size: 12px;
+            color: rgba(248,113,113,0.9);
+            margin-bottom: 9px;
+            line-height: 1.5;
+        }
+        .margin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .margin-grid .prop-label {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+        .margin-grid .prop-input {
+            margin-bottom: 0;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="flex h-screen">
-        <!-- Left Panel -->
-        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
-            <h1 class="text-xl font-bold text-gray-800 mb-4">Recortar PDF</h1>
-            
-            <!-- Upload PDF -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
-                <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                    <input type="file" id="pdfInput" accept=".pdf" class="hidden">
-                    <label for="pdfInput" class="cursor-pointer">
-                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                        <p id="uploadLabel" class="text-sm text-gray-500">Seleccionar PDF</p>
-                    </label>
-                </div>
-                <button type="button" onclick="document.getElementById('pdfInput').click()" class="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm">
-                    Seleccionar archivo
-                </button>
+<body>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-dot">im</div>
+                <span class="logo-label">PDF Impresistem</span>
             </div>
+            <h1 class="sidebar-title">Recortar PDF</h1>
+        </div>
 
-            <!-- Page Selector -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Página</label>
-                <input type="number" id="pageNum" value="1" min="1" 
-                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
-            </div>
-
-            <!-- Margin Inputs -->
-            <div class="space-y-3 mb-4">
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen izquierdo (%)</label>
-                    <input type="number" id="margen_izq" value="0" min="0" max="40" 
-                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen superior (%)</label>
-                    <input type="number" id="margen_sup" value="0" min="0" max="40" 
-                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen derecho (%)</label>
-                    <input type="number" id="margen_der" value="0" min="0" max="40" 
-                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Margen inferior (%)</label>
-                    <input type="number" id="margen_inf" value="0" min="0" max="40" 
-                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-orange-400">
-                </div>
-            </div>
-
-            <!-- Validation Warning -->
-            <div id="warningArea" class="mb-4 text-sm text-red-600 hidden">
-                Los márgenes combinados no pueden superar el 100%
-            </div>
-
-            <!-- Hidden inputs for backend -->
-            <input type="hidden" name="margen_izq" id="margen_izq_hidden">
-            <input type="hidden" name="margen_der" id="margen_der_hidden">
-            <input type="hidden" name="margen_sup" id="margen_sup_hidden">
-            <input type="hidden" name="margen_inf" id="margen_inf_hidden">
-
-            <!-- Buttons - sticky to bottom -->
-            <div class="sticky bottom-0 bg-white pt-3 mt-auto">
-                <button type="button" id="cropBtn" onclick="cropPDF()" disabled
-                    class="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
-                    Recortar PDF
-                </button>
-                
-                <button type="button" id="resetBtn" onclick="resetCrop()" disabled
-                    class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
-                    Restablecer
-                </button>
-            </div>
-
-            <!-- Download Link -->
-            <div id="downloadArea" class="mt-4 hidden">
-                <h3 class="text-lg font-bold text-green-700 mb-2">PDF recortado</h3>
-                <a id="downloadLink" href="#" download class="text-blue-600 hover:underline">
-                    Descargar PDF
-                </a>
+        <!-- Archivo -->
+        <div class="sidebar-section">
+            <span class="section-label">Archivo PDF</span>
+            <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
+            <div class="file-upload-zone" onclick="document.getElementById('pdfInput').click()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p><strong id="uploadLabel">Seleccionar PDF</strong></p>
             </div>
         </div>
 
-        <!-- Main Canvas Area -->
-        <div class="flex-1 p-5 overflow-auto flex items-center justify-center bg-gray-100">
-            <div class="bg-white rounded-xl shadow-lg p-4">
+        <!-- Página -->
+        <div class="sidebar-section">
+            <span class="section-label">Página</span>
+            <div class="page-control">
+                <button class="page-nav-btn" onclick="changePageNum(-1)">‹</button>
+                <input type="number" id="pageNum" value="1" min="1" class="page-num-input">
+                <span class="page-total-label" id="pageTotalLabel"></span>
+                <button class="page-nav-btn" onclick="changePageNum(1)">›</button>
+            </div>
+        </div>
+
+        <!-- Márgenes -->
+        <div class="sidebar-section">
+            <span class="section-label">Márgenes</span>
+            <div class="margin-grid">
+                <div>
+                    <label class="prop-label">Izquierdo (%)</label>
+                    <input type="number" id="margen_izq" value="0" min="0" max="40" class="prop-input">
+                </div>
+                <div>
+                    <label class="prop-label">Derecho (%)</label>
+                    <input type="number" id="margen_der" value="0" min="0" max="40" class="prop-input">
+                </div>
+                <div>
+                    <label class="prop-label">Superior (%)</label>
+                    <input type="number" id="margen_sup" value="0" min="0" max="40" class="prop-input">
+                </div>
+                <div>
+                    <label class="prop-label">Inferior (%)</label>
+                    <input type="number" id="margen_inf" value="0" min="0" max="40" class="prop-input">
+                </div>
+            </div>
+        </div>
+
+        <!-- Warning -->
+        <div id="warningArea" style="display:none;" class="warning-box">
+            Los márgenes combinados no pueden superar el 100%
+        </div>
+
+        <!-- Hidden inputs -->
+        <input type="hidden" name="margen_izq" id="margen_izq_hidden">
+        <input type="hidden" name="margen_der" id="margen_der_hidden">
+        <input type="hidden" name="margen_sup" id="margen_sup_hidden">
+        <input type="hidden" name="margen_inf" id="margen_inf_hidden">
+
+        <div style="flex:1;"></div>
+
+        <div class="sidebar-footer">
+            <button type="button" id="cropBtn" onclick="cropPDF()" disabled class="btn-primary">
+                Recortar PDF
+            </button>
+            <button type="button" id="resetBtn" onclick="resetCrop()" disabled class="btn-secondary">
+                Restablecer
+            </button>
+            <div id="downloadArea" style="display:none;">
+                <div class="download-area">
+                    <span class="download-title">PDF recortado</span>
+                    <a id="downloadLink" href="#" download class="download-link">Descargar PDF</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainArea">
+        <div class="main-topbar">
+            <span class="main-hint">Ajusta los márgenes de recorte arrastrando el rectángulo sobre el PDF</span>
+            <span class="main-info" id="zoomLabel">595 × 842 pt</span>
+        </div>
+        <div class="main-wrapper">
+            <div class="canvas-card">
                 <canvas id="cropCanvas"></canvas>
             </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-item"><div class="status-dot"></div> Listo</div>
+            <div class="status-item" id="statusMargins">M: 0 0 0 0</div>
+            <div class="status-item" id="statusPage">Pág 1</div>
         </div>
     </div>
 
@@ -280,9 +312,9 @@
             const valid = (mIzq + mDer < 100) && (mSup + mInf < 100);
             
             if (!valid) {
-                warningArea.classList.remove('hidden');
+                warningArea.style.display = 'block';
             } else {
-                warningArea.classList.add('hidden');
+                warningArea.style.display = 'none';
             }
             
             return valid;
@@ -362,7 +394,7 @@
                     if (link) {
                         downloadLink.href = link.getAttribute('href');
                         downloadLink.download = link.download;
-                        downloadArea.classList.remove('hidden');
+                        downloadArea.style.display = 'block';
                     }
                 }
             } catch (e) {
@@ -392,6 +424,66 @@
         });
 
         initCanvas();
+
+        function changePageNum(delta) {
+            const input = document.getElementById('pageNum');
+            const newVal = Math.max(1, parseInt(input.value) + delta);
+            input.value = newVal;
+            if (pdfInput.files[0]) fetchPagePreview();
+        }
+
+        const origValidateMargins = validateMargins;
+        window.validateMargins = function() {
+            const mIzq = parseInt(marginInputs.izq.value) || 0;
+            const mDer = parseInt(marginInputs.der.value) || 0;
+            const mSup = parseInt(marginInputs.sup.value) || 0;
+            const mInf = parseInt(marginInputs.inf.value) || 0;
+
+            const valid = (mIzq + mDer < 100) && (mSup + mInf < 100);
+
+            warningArea.style.display = valid ? 'none' : 'block';
+
+            return valid;
+        };
+
+        const origCropPDF = cropPDF;
+        window.cropPDF = async function() {
+            if (!pdfInput.files[0]) return;
+
+            if (!validateMargins()) {
+                alert('Los márgenes no son válidos');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('margen_izq', marginInputs.izq.value);
+            formData.append('margen_der', marginInputs.der.value);
+            formData.append('margen_sup', marginInputs.sup.value);
+            formData.append('margen_inf', marginInputs.inf.value);
+
+            try {
+                const response = await fetch('/crop', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(result, 'text/html');
+                    const link = doc.querySelector('a[download]');
+
+                    if (link) {
+                        downloadLink.href = link.getAttribute('href');
+                        downloadLink.download = link.download;
+                        downloadArea.style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.error('Error cropping PDF:', e);
+            }
+        };
     </script>
 </body>
 </html>

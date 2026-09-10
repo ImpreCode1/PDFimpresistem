@@ -2,89 +2,171 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Eliminar PDF — PDF Impresistem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Organizar PDF — PDF Impresistem</title>
+    <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <style>
         .thumbnail-card {
-            transition: all 0.2s ease;
+            position: relative;
+            cursor: pointer;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: #fff;
+            transition: transform 0.15s, border-color 0.15s;
         }
-        .thumbnail-card:hover {
-            transform: scale(1.02);
+        .thumbnail-card:hover { transform: scale(1.02); }
+        .thumbnail-card.selected { border-color: #ef4444; }
+        .thumbnail-card img { width: 100%; display: block; }
+        .thumb-page-badge {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            display: flex;
+            justify-content: center;
+            padding: 6px;
+            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+        }
+        .thumb-page-badge span {
+            font-size: 11px;
+            color: #fff;
+            background: rgba(80,80,80,0.8);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .thumb-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(239,68,68,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .thumb-overlay svg { width: 32px; height: 32px; color: #fff; }
+        #thumbnailGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            padding: 4px;
+        }
+        #emptyState {
+            text-align: center;
+            color: #aaa;
+            padding: 60px 20px;
+            font-size: 14px;
+        }
+        .warning-box {
+            background: rgba(220,38,38,0.08);
+            border: 1px solid rgba(220,38,38,0.25);
+            border-radius: 7px;
+            padding: 8px 11px;
+            font-size: 12px;
+            color: rgba(248,113,113,0.9);
+            margin-bottom: 9px;
+        }
+        .stats-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .stat-box {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 7px;
+            padding: 8px;
+            text-align: center;
+        }
+        .stat-num {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f5c518;
+            display: block;
+        }
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="flex h-screen">
-        <!-- Left Panel -->
-        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
-            <h1 class="text-xl font-bold text-gray-800 mb-4">Eliminar PDF</h1>
-            
-            <!-- Upload PDF -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
-                <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                    <input type="file" id="pdfInput" accept=".pdf" class="hidden">
-                    <label for="pdfInput" class="cursor-pointer">
-                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                        <p id="uploadLabel" class="text-sm text-gray-500">Seleccionar PDF</p>
-                    </label>
-                </div>
-                <button type="button" onclick="document.getElementById('pdfInput').click()" class="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm">
-                    Seleccionar archivo
-                </button>
+<body>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-dot">im</div>
+                <span class="logo-label">PDF Impresistem</span>
             </div>
+            <h1 class="sidebar-title">Organizar PDF</h1>
+        </div>
 
-            <!-- Page Count -->
-            <div id="pageCount" class="mb-4 text-sm text-gray-600 hidden">
-                <span id="pageCountNum">0</span> páginas
-            </div>
-
-            <!-- Selection Summary -->
-            <div id="selectionSummary" class="mb-4 text-sm text-gray-600 hidden">
-                <span id="selectedCount">0</span> de <span id="totalCount">0</span> páginas marcadas para eliminar
-            </div>
-
-            <!-- Warning -->
-            <div id="warningArea" class="mb-4 text-sm text-red-600 hidden">
-                No puedes eliminar todas las páginas
-            </div>
-
-            <!-- Hidden input -->
-            <input type="hidden" name="paginas" id="paginas_input">
-
-            <!-- Buttons - sticky to bottom -->
-            <div class="sticky bottom-0 bg-white pt-3 mt-auto">
-                <button type="button" id="deleteBtn" onclick="deletePages()" disabled
-                    class="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
-                    Eliminar páginas
-                </button>
-                
-                <button type="button" id="clearBtn" onclick="clearSelection()" disabled
-                    class="w-full bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
-                    Deseleccionar todo
-                </button>
-            </div>
-
-            <!-- Download Link -->
-            <div id="downloadArea" class="mt-4 hidden">
-                <h3 class="text-lg font-bold text-green-700 mb-2">PDF organizado</h3>
-                <a id="downloadLink" href="#" download class="text-blue-600 hover:underline">
-                    Descargar PDF
-                </a>
+        <!-- Archivo -->
+        <div class="sidebar-section">
+            <span class="section-label">Archivo PDF</span>
+            <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
+            <div class="file-upload-zone" onclick="document.getElementById('pdfInput').click()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p><strong id="uploadLabel">Seleccionar PDF</strong></p>
             </div>
         </div>
 
-        <!-- Main: Thumbnails Grid -->
-        <div class="flex-1 p-5 overflow-auto">
-            <h2 class="text-lg font-semibold text-gray-800 mb-3">Selecciona las páginas a eliminar</h2>
-            <div id="thumbnailGrid" class="grid grid-cols-3 gap-4">
-                <!-- Thumbnails will be inserted here -->
+        <!-- Stats -->
+        <div class="sidebar-section">
+            <span class="section-label">Resumen</span>
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-num" id="pageCountNum">0</span>
+                    <span class="stat-label">Total págs</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-num" id="selectedCount" style="color:#ef4444;">0</span>
+                    <span class="stat-label">A eliminar</span>
+                </div>
             </div>
-            <div id="emptyState" class="text-center text-gray-400 py-20">
-                Sube un PDF para ver las páginas
+            <div id="warningArea" style="display:none;" class="warning-box">
+                No puedes eliminar todas las páginas
             </div>
+            <div class="info-box" id="selectionSummary" style="display:none;">
+                <span id="totalCount">0</span> páginas en total ·
+                haz clic en las miniaturas para marcarlas
+            </div>
+        </div>
+
+        <!-- Hidden inputs -->
+        <input type="hidden" id="pageCount">
+        <input type="hidden" name="paginas" id="paginas_input">
+
+        <div style="flex:1;"></div>
+
+        <div class="sidebar-footer">
+            <button type="button" id="deleteBtn" onclick="deletePages()" disabled class="btn-danger">
+                Eliminar páginas seleccionadas
+            </button>
+            <button type="button" id="clearBtn" onclick="clearSelection()" disabled class="btn-secondary">
+                Deseleccionar todo
+            </button>
+            <div id="downloadArea" style="display:none;" class="download-area">
+                <span class="download-title">PDF organizado listo</span>
+                <a id="downloadLink" href="#" download class="download-link">Descargar PDF</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainArea">
+        <div class="main-topbar">
+            <span class="main-hint">Haz clic en las páginas para marcarlas como eliminadas</span>
+            <span class="main-info" id="statusInfo">Sin archivo</span>
+        </div>
+        <div class="main-wrapper" style="align-items:flex-start; padding:16px;">
+            <div style="width:100%;">
+                <div id="thumbnailGrid"></div>
+                <div id="emptyState">Sube un PDF para ver sus páginas</div>
+            </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-item"><div class="status-dot"></div> Listo</div>
+            <div class="status-item" id="statusPages">0 páginas</div>
+            <div class="status-item" id="statusSelected">0 seleccionadas</div>
         </div>
     </div>
 
@@ -126,12 +208,13 @@
                     thumbnails = data.thumbnails;
                     selectedPages.clear();
                     renderThumbnails();
-                    
+
                     pageCountNum.textContent = thumbnails.length;
                     totalCount.textContent = thumbnails.length;
-                    pageCount.classList.remove('hidden');
-                    selectionSummary.classList.remove('hidden');
-                    emptyState.classList.add('hidden');
+                    document.getElementById('selectionSummary').style.display = 'block';
+                    document.getElementById('emptyState').style.display = 'none';
+                    document.getElementById('statusPages').textContent = thumbnails.length + ' páginas';
+                    document.getElementById('statusInfo').textContent = pdfInput.files[0].name;
                     updateButtons();
                 }
             } catch (e) {
@@ -141,35 +224,29 @@
 
         function renderThumbnails() {
             thumbnailGrid.innerHTML = '';
-            
+
             thumbnails.forEach((thumb, index) => {
                 const pageNum = index + 1;
                 const card = document.createElement('div');
-                card.className = 'thumbnail-card relative cursor-pointer rounded-lg overflow-hidden border-2 border-gray-200 hover:border-red-300';
+                card.className = 'thumbnail-card';
                 card.dataset.page = pageNum;
-                
+
                 const img = document.createElement('img');
                 img.src = thumb;
-                img.className = 'w-full h-32 object-cover';
                 img.alt = 'Página ' + pageNum;
-                
+
                 const badge = document.createElement('div');
-                badge.className = 'absolute bottom-0 left-0 right-0 flex justify-center p-2 bg-gradient-to-t from-black/60 to-transparent';
-                
+                badge.className = 'thumb-page-badge';
+
                 const badgeText = document.createElement('span');
-                badgeText.className = 'text-xs text-white bg-gray-600/80 px-2 py-1 rounded';
                 badgeText.dataset.for = 'badge';
-                badgeText.textContent = 'Página ' + pageNum;
-                
+                badgeText.textContent = 'Pág ' + pageNum;
+
                 badge.appendChild(badgeText);
-                
                 card.appendChild(img);
                 card.appendChild(badge);
-                
-                card.addEventListener('click', function() {
-                    togglePage(pageNum);
-                });
-                
+
+                card.addEventListener('click', function() { togglePage(pageNum); });
                 thumbnailGrid.appendChild(card);
             });
         }
@@ -186,58 +263,44 @@
 
         function updateCards() {
             const cards = thumbnailGrid.querySelectorAll('.thumbnail-card');
-            
+
             cards.forEach(card => {
                 const pageNum = parseInt(card.dataset.page);
                 const isSelected = selectedPages.has(pageNum);
                 const badge = card.querySelector('[data-for="badge"]');
-                
+
                 if (isSelected) {
-                    card.classList.remove('border-gray-200');
-                    card.classList.add('border-red-500');
-                    
-                    const overlay = document.createElement('div');
-                    overlay.className = 'absolute inset-0 bg-red-500 bg-opacity-40 flex items-center justify-center';
-                    overlay.dataset.for = 'overlay';
-                    
-                    const trashIcon = document.createElement('svg');
-                    trashIcon.className = 'w-8 h-8 text-white';
-                    trashIcon.setAttribute('fill', 'none');
-                    trashIcon.setAttribute('stroke', 'currentColor');
-                    trashIcon.setAttribute('viewBox', '0 0 24 24');
-                    trashIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>';
-                    
-                    overlay.appendChild(trashIcon);
-                    card.appendChild(overlay);
-                    
-                    badge.classList.add('line-through');
+                    card.classList.add('selected');
+                    if (!card.querySelector('[data-for="overlay"]')) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'thumb-overlay';
+                        overlay.dataset.for = 'overlay';
+                        overlay.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                        card.appendChild(overlay);
+                    }
+                    if (badge) badge.style.textDecoration = 'line-through';
                 } else {
-                    card.classList.add('border-gray-200');
-                    card.classList.remove('border-red-500');
-                    
+                    card.classList.remove('selected');
                     const overlay = card.querySelector('[data-for="overlay"]');
                     if (overlay) overlay.remove();
-                    
-                    badge.classList.remove('line-through');
+                    if (badge) badge.style.textDecoration = 'none';
                 }
             });
-            
+
             selectedCount.textContent = selectedPages.size;
+            document.getElementById('statusSelected').textContent = selectedPages.size + ' seleccionadas';
         }
 
         function updateButtons() {
             const total = thumbnails.length;
             const selected = selectedPages.size;
-            
+
             deleteBtn.disabled = selected === 0 || selected === total;
             clearBtn.disabled = selected === 0;
-            
-            if (selected === total && total > 0) {
-                warningArea.classList.remove('hidden');
-            } else {
-                warningArea.classList.add('hidden');
-            }
-            
+
+            const warningArea = document.getElementById('warningArea');
+            warningArea.style.display = (selected === total && total > 0) ? 'block' : 'none';
+
             paginasInput.value = Array.from(selectedPages).join(',');
         }
 
@@ -276,7 +339,7 @@
                     if (link) {
                         downloadLink.href = link.getAttribute('href');
                         downloadLink.download = link.download;
-                        downloadArea.classList.remove('hidden');
+                        document.getElementById('downloadArea').style.display = 'block';
                     }
                 }
             } catch (e) {

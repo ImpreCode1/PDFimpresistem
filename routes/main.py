@@ -5,6 +5,7 @@ from utils import limpiar_carpeta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
+import fitz
 from auth import login_required, HYDRA_LOGIN_URL, validar_token, JWT_SECRET
 import jwt
 import os
@@ -92,6 +93,16 @@ def auth():
         print(f'[Auth] Error inesperado validando token: {e}')
         return redirect(HYDRA_LOGIN_URL)
 
+# ─── Alias de compatibilidad con el lanzador de "Sistema de Gestión de Accesos" ──
+@main_bp.route('/login')
+def login_alias():
+    """
+    El panel central asume la convención /login de ImpreForms para todas
+    las plataformas. PDFimpresistem usa /auth como callback real de SSO
+    (ver función auth() arriba) — este alias solo reenvía a esa misma lógica,
+    para no duplicar la validación de token ni el manejo de sesión.
+    """
+    return auth()
 
 # ─── Cierre de sesión SSO ─────────────────────────────────────────────────────
 @main_bp.route('/logout', methods=['POST'])
@@ -125,7 +136,7 @@ def reorder_ui():
 @main_bp.route('/organize_ui')
 @login_required
 def organize_ui():
-    """Renderiza la página de eliminar PDF."""
+    """Renderiza la página de organizar PDF."""
     return render_template('organize.html')
 
 
@@ -195,19 +206,45 @@ def convert():
 
     file = request.files['pdf_file']
 
-    if file.filename == '' or not file.filename.endswith('.pdf'): # type: ignore
+    if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
-    filename = secure_filename(file.filename) # type: ignore
+    # Sanitizar nombre: reemplazar caracteres especiales por guion bajo
+    import re
+    nombre_base = os.path.splitext(file.filename)[0]
+    nombre_limpio = re.sub(r'[^\w\-.]', '_', nombre_base)
+    filename = secure_filename(nombre_limpio + '.pdf')
+
     pdf_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(pdf_path)
 
-    output_filename = filename.rsplit('.', 1)[0] + '.docx'
+    # Validar antes de procesar
+    try:
+        doc = fitz.open(pdf_path)
+
+        if doc.is_encrypted:
+            doc.close()
+            return 'El PDF está protegido con contraseña. Desbloquéalo primero.', 400
+
+        total_paginas = doc.page_count
+        doc.close()
+
+        if total_paginas > 60:
+            return f'El PDF tiene {total_paginas} páginas. El límite es 30 páginas.', 400
+
+    except Exception as e:
+        return f'No se pudo leer el PDF: {str(e)}', 400
+
+    # Conservar nombre original limpio en el output
+    output_filename = nombre_limpio + '.docx'
     word_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
-    cv = Converter(pdf_path)
-    cv.convert(word_path, start=0, end=None) # type: ignore
-    cv.close()
+    try:
+        cv = Converter(pdf_path)
+        cv.convert(word_path, start=0, end=None)
+        cv.close()
+    except Exception as e:
+        return f'Error al convertir el archivo: {str(e)}', 500
 
     output_file_url = f'/download/{output_filename}'
-    return render_template('index.html', output_file=output_file_url)
+    return render_template('index.html', output_file=output_file_url, convirtiendo=False)

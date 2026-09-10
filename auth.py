@@ -8,7 +8,7 @@ from flask import request, redirect, session, url_for
 # ─── Configuración ────────────────────────────────────────────────────────────
 # JWT_SECRET debe coincidir exactamente con el secreto de Hydra IAM
 # En producción: usar variable de entorno, NUNCA hardcodeado en el código
-JWT_SECRET = os.getenv('JWT_SECRET','')
+JWT_SECRET = os.getenv('JWT_SECRET', 'super_secret_key')
 if not os.getenv('JWT_SECRET'):
     import warnings
     warnings.warn(
@@ -63,6 +63,8 @@ def validar_token(token: str) -> dict:
     return payload
 
 
+
+
 # ─── Decorador de protección ──────────────────────────────────────────────────
 def login_required(f):
     """
@@ -83,6 +85,22 @@ def login_required(f):
 """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        
+        # ── BYPASS LOCAL (solo desarrollo) ──────────────────────────────
+        if os.getenv('FLASK_ENV') == 'development':
+            if 'user' not in session:
+                session['user'] = {
+                    'sub': 'local-dev',
+                    'email': 'daniel.medina@impresistem.com',
+                    'name': 'Daniel Medina (Dev)',
+                    'roles': ['USER', 'ADMIN'],
+                    'positionId': None,
+                    'platform': 'PDFS',
+                }
+                session.permanent = True
+            return f(*args, **kwargs)
+        # ────────────────────────────────────────────────────────────────
+
         # 1. Verificar sesión primero
         if 'user' in session:
             print(f'[login_required] Session found: {session.get("user", {})}')

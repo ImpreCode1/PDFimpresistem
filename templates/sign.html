@@ -3,104 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <title>Firmar PDF — PDF Impresistem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        #signCanvas, #drawCanvas {
-            border: 2px dashed #d1d5db;
-        }
         #drawCanvas {
             cursor: crosshair;
             background: #fff;
+            border-radius: 6px;
+            display: block;
+            width: 100%;
         }
-        .tab-active {
-            border-bottom: 2px solid #2563eb;
-            color: #2563eb;
+        .draw-area {
+            border: 1.5px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            background: #fff;
+        }
+        .firma-preview {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .firma-preview.has-firma {
+            color: #22c55e;
+            border-color: rgba(34,197,94,0.25);
+            background: rgba(34,197,94,0.06);
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="flex h-screen">
-        <!-- Left Panel -->
-        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
-            <h1 class="text-xl font-bold text-gray-800 mb-4">Firmar PDF</h1>
-            
-            <!-- Upload PDF -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
-                <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                    <input type="file" id="pdfInput" accept=".pdf" class="hidden">
-                    <label for="pdfInput" class="cursor-pointer">
-                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                        <p id="uploadLabel" class="text-sm text-gray-500">Seleccionar PDF</p>
-                    </label>
-                </div>
-                <button type="button" onclick="document.getElementById('pdfInput').click()" class="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm">
-                    Seleccionar archivo
-                </button>
+<body>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-dot">im</div>
+                <span class="logo-label">PDF Impresistem</span>
             </div>
+            <h1 class="sidebar-title">Firmar PDF</h1>
+        </div>
 
-            <!-- Page Selector -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Página</label>
-                <input type="number" id="pageNum" value="1" min="1" 
-                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-gray-400">
-            </div>
-
-            <!-- Signature Tabs -->
-            <div class="mb-4">
-                <div class="flex border-b border-gray-200 mb-3">
-                    <button type="button" id="tabUpload" onclick="switchTab('upload')"
-                        class="flex-1 pb-2 text-sm font-medium tab-active">Subir imagen</button>
-                    <button type="button" id="tabDraw" onclick="switchTab('draw')"
-                        class="flex-1 pb-2 text-sm font-medium text-gray-500">Dibujar firma</button>
-                </div>
-
-                <!-- Upload Tab -->
-                <div id="tabUploadContent">
-                    <input type="file" id="firmaInput" accept=".jpg,.jpeg,.png" 
-                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
-                </div>
-
-                <!-- Draw Tab -->
-                <div id="tabDrawContent" class="hidden">
-                    <canvas id="drawCanvas" width="300" height="120" class="w-full"></canvas>
-                    <div class="flex gap-2 mt-2">
-                        <button type="button" onclick="clearDraw()" 
-                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm">
-                            Limpiar
-                        </button>
-                        <button type="button" onclick="useDrawing()" 
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-lg text-sm">
-                            Usar esta firma
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Hidden inputs for form submission -->
-            <input type="hidden" id="pagina" name="pagina" value="1">
-            <input type="hidden" id="pos_x" name="pos_x" value="60">
-            <input type="hidden" id="pos_y" name="pos_y" value="80">
-            <input type="hidden" id="firma_ancho" name="firma_ancho" value="30">
-            <input type="hidden" id="firma_alto" name="firma_alto" value="10">
-
-            <!-- Submit Button - sticky to bottom -->
-            <div class="sticky bottom-0 bg-white pt-3 mt-auto">
-                <button type="button" id="submitBtn" onclick="submitSignedPDF()" disabled
-                    class="w-full bg-gray-700 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200">
-                    Firmar PDF
-                </button>
+        <!-- Archivo -->
+        <div class="sidebar-section">
+            <span class="section-label">Archivo PDF</span>
+            <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
+            <div class="file-upload-zone" onclick="document.getElementById('pdfInput').click()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p><strong id="uploadLabel">Seleccionar PDF</strong></p>
             </div>
         </div>
 
-        <!-- Main Canvas Area -->
-        <div class="flex-1 p-5 overflow-auto flex items-center justify-center bg-gray-100">
-            <div class="bg-white rounded-xl shadow-lg p-4">
+        <!-- Página -->
+        <div class="sidebar-section">
+            <span class="section-label">Página</span>
+            <div class="page-control">
+                <button class="page-nav-btn" onclick="changePageNum(-1)">‹</button>
+                <input type="number" id="pageNum" value="1" min="1" class="page-num-input">
+                <span class="page-total-label" id="pageTotalLabel"></span>
+                <button class="page-nav-btn" onclick="changePageNum(1)">›</button>
+            </div>
+        </div>
+
+        <!-- Firma -->
+        <div class="sidebar-section">
+            <span class="section-label">Firma</span>
+            <div class="tab-row">
+                <button type="button" id="tabUpload" onclick="switchTab('upload')" class="tab-btn tab-active">Subir imagen</button>
+                <button type="button" id="tabDraw" onclick="switchTab('draw')" class="tab-btn">Dibujar</button>
+            </div>
+
+            <div id="tabUploadContent">
+                <label class="prop-label">Imagen JPG o PNG</label>
+                <input type="file" id="firmaInput" accept=".jpg,.jpeg,.png" class="prop-input" style="padding:4px 8px; cursor:pointer;">
+                <div class="firma-preview" id="firmaPreview">Sin firma cargada</div>
+            </div>
+
+            <div id="tabDrawContent" style="display:none;">
+                <label class="prop-label">Dibuja tu firma</label>
+                <div class="draw-area">
+                    <canvas id="drawCanvas" width="236" height="110"></canvas>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" onclick="clearDraw()" class="btn-secondary" style="margin:0; flex:1; padding:7px;">
+                        Limpiar
+                    </button>
+                    <button type="button" onclick="useDrawing()" class="btn-primary" style="margin:0; flex:1; padding:7px; background:#22c55e; color:#fff;">
+                        Usar firma
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="sidebar-section">
+            <div class="info-box">
+                Arrastra la firma sobre el PDF para posicionarla. Puedes redimensionarla desde las esquinas.
+            </div>
+        </div>
+
+        <!-- Hidden inputs -->
+        <input type="hidden" id="pagina" name="pagina" value="1">
+        <input type="hidden" id="pos_x" name="pos_x" value="60">
+        <input type="hidden" id="pos_y" name="pos_y" value="80">
+        <input type="hidden" id="firma_ancho" name="firma_ancho" value="30">
+        <input type="hidden" id="firma_alto" name="firma_alto" value="10">
+
+        <div style="flex:1;"></div>
+
+        <div class="sidebar-footer">
+            <button type="button" id="submitBtn" onclick="submitSignedPDF()" disabled class="btn-primary">
+                Firmar y descargar PDF
+            </button>
+        </div>
+    </div>
+
+    <div id="mainArea">
+        <div class="main-topbar">
+            <span class="main-hint">Carga un PDF y posiciona la firma arrastrándola sobre el documento</span>
+            <span class="main-info" id="zoomLabel">595 × 842 pt</span>
+        </div>
+        <div class="main-wrapper">
+            <div class="canvas-card">
                 <canvas id="signCanvas"></canvas>
             </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-item"><div class="status-dot"></div> Listo</div>
+            <div class="status-item" id="statusFirma">Sin firma</div>
+            <div class="status-item" id="statusPage">Pág 1</div>
         </div>
     </div>
 
@@ -333,6 +373,31 @@
 
         initCanvas();
         initDrawCanvas();
+
+        function changePageNum(delta) {
+            const input = document.getElementById('pageNum');
+            const newVal = Math.max(1, parseInt(input.value) + delta);
+            input.value = newVal;
+            document.getElementById('pagina').value = newVal;
+            if (pdfInput.files[0]) fetchPagePreview();
+        }
+
+        const origSwitchTab = switchTab;
+        window.switchTab = function(tab) {
+            document.getElementById('tabUpload').classList.remove('tab-active');
+            document.getElementById('tabDraw').classList.remove('tab-active');
+            document.getElementById('tabUploadContent').style.display = 'none';
+            document.getElementById('tabDrawContent').style.display = 'none';
+            if (tab === 'upload') {
+                document.getElementById('tabUpload').classList.add('tab-active');
+                document.getElementById('tabUploadContent').style.display = 'block';
+            } else {
+                document.getElementById('tabDraw').classList.add('tab-active');
+                document.getElementById('tabDrawContent').style.display = 'block';
+            }
+        };
+        switchTab('upload');
+
     </script>
 </body>
 </html>

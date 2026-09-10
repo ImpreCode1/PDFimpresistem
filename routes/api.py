@@ -61,26 +61,31 @@ def page_preview():
         return jsonify({'error': 'El número de página debe ser un entero'}), 400
     
     pdf_bytes = file.read()
+    if not pdf_bytes:
+        return jsonify({'error': 'El archivo está vacío o ya fue leído'}), 400
+
     try:
         doc = fitz.open(stream=pdf_bytes, filetype='pdf')
     except Exception as e:
         return jsonify({'error': f'No se pudo abrir el PDF: {str(e)}'}), 400
-    
-    if pagina < 1 or pagina > doc.page_count:
+
+    total = doc.page_count
+
+    if pagina < 1 or pagina > total:
         doc.close()
-        return jsonify({'error': f'Página fuera de rango (1-{doc.page_count})'}), 400
-    
+        return jsonify({'error': f'Página fuera de rango (1-{total})'}), 400
+
     page = doc[pagina - 1]
     zoom = 2.0
     mat = fitz.Matrix(zoom, zoom)
     pix = page.get_pixmap(matrix=mat)
-    
+
     img_bytes = pix.tobytes('png')
     img_b64 = base64.b64encode(img_bytes).decode('utf-8')
-    
+
     doc.close()
-    
-    return jsonify({'image': f'data:image/png;base64,{img_b64}'})
+
+    return jsonify({'image': f'data:image/png;base64,{img_b64}', 'total_pages': total})
 
 
 @api_bp.route('/save_signature', methods=['POST', 'OPTIONS'])
@@ -217,5 +222,70 @@ def page_preview_by_name():
     doc.close()
     
     return jsonify({'image': f'data:image/png;base64,{img_b64}'})
+
+
+@api_bp.route('/extract_text', methods=['POST', 'OPTIONS'])
+@login_required
+def extract_text():
+    """
+    Extrae bloques de texto de una página del PDF con sus coordenadas.
+
+    Args:
+        pdf_file (file): Archivo PDF.
+        pagina (int): Número de página (base 1). Por defecto: 1.
+
+    Returns:
+        JSON: {'blocks': [{'text': str, 'x0': float, 'y0': float, 'x1': float, 'y1': float, 'size': float}]}
+    """
+    if 'pdf_file' not in request.files:
+        return jsonify({'error': 'No se ha seleccionado un archivo'}), 400
+
+    file = request.files['pdf_file']
+    if file.filename == '' or not file.filename.endswith('.pdf'):
+        return jsonify({'error': 'Por favor, suba un archivo PDF'}), 400
+
+    try:
+        pagina = int(request.form.get('pagina', 1))
+    except ValueError:
+        return jsonify({'error': 'El número de página debe ser un entero'}), 400
+
+    pdf_bytes = file.read()
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+    except Exception as e:
+        return jsonify({'error': f'No se pudo abrir el PDF: {str(e)}'}), 400
+
+    total_pages = doc.page_count
+    if pagina < 1 or pagina > total_pages:
+        doc.close()
+        return jsonify({'error': f'Página fuera de rango (1-{total_pages})'}), 400
+
+    page = doc[pagina - 1]
+    zoom = 2.0
+    blocks = page.get_text('dict', flags=fitz.TEXT_PRESERVE_WHITESPACE)['blocks']
+
+    result = []
+    for block in blocks:
+        if block.get('type') != 0:
+            continue
+        for line in block.get('lines', []):
+            for span in line.get('spans', []):
+                text = span.get('text', '').strip()
+                if not text:
+                    continue
+                bbox = span.get('bbox', [0, 0, 0, 0])
+                result.append({
+                    'text': text,
+                    'x0': bbox[0] * zoom,
+                    'y0': bbox[1] * zoom,
+                    'x1': bbox[2] * zoom,
+                    'y1': bbox[3] * zoom,
+                    'size': span.get('size', 12) * zoom
+                })
+
+    blocks_result = result
+    total = doc.page_count
+    doc.close()
+    return jsonify({'blocks': blocks_result, 'total_pages': total})
 
 

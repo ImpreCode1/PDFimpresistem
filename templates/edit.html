@@ -3,96 +3,684 @@
 <head>
     <meta charset="UTF-8">
     <title>Editar PDF — PDF Impresistem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #e8eaed;
+        }
+
+        /* ── Sidebar ── */
+        #sidebar {
+            width: 268px;
+            min-width: 268px;
+            background: #1a2332;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 14px 16px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .logo-dot {
+            width: 26px;
+            height: 26px;
+            background: #f5c518;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #1a2332;
+            flex-shrink: 0;
+        }
+
+        .logo-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+        }
+
+        .sidebar-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            margin-bottom: 9px;
+            display: block;
+        }
+
+        /* ── File ── */
+        .file-name-display {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 7px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background 0.15s;
+            width: 100%;
+            text-align: left;
+        }
+
+        .file-name-display:hover {
+            background: rgba(255,255,255,0.11);
+        }
+
+        /* ── Page control ── */
+        .page-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .page-nav-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .page-nav-btn:hover {
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .page-num-input {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            padding: 5px 6px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            text-align: center;
+        }
+
+        .page-total-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            white-space: nowrap;
+        }
+
+        /* ── Tools grid ── */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+        }
+
+        .tool-group-label {
+            grid-column: span 3;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.2);
+            text-transform: uppercase;
+            padding: 4px 0 2px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin-top: 2px;
+        }
+
+        .tool-group-label:first-child {
+            border-top: none;
+            margin-top: 0;
+        }
+
+        .tool-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 8px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: rgba(255,255,255,0.5);
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85);
+        }
+
+        .tool-btn.tool-active {
+            background: rgba(245,197,24,0.15);
+            border-color: rgba(245,197,24,0.5);
+            color: #f5c518;
+        }
+
+        .tool-btn svg, .tool-btn i {
+            font-size: 17px;
+            width: 17px;
+            height: 17px;
+        }
+
+        .tool-btn-label {
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .tool-btn-delete {
+            grid-column: span 3;
+            background: rgba(220,38,38,0.08);
+            border-color: rgba(220,38,38,0.2);
+            color: rgba(220,100,100,0.8);
+            flex-direction: row;
+            justify-content: center;
+            padding: 7px;
+            gap: 6px;
+        }
+
+        .tool-btn-delete:hover {
+            background: rgba(220,38,38,0.15);
+            color: rgb(248,113,113);
+        }
+
+        /* ── Form controls ── */
+        .prop-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 5px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .prop-input {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            padding: 5px 9px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            margin-bottom: 9px;
+        }
+
+        .props-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .props-row .prop-input {
+            flex: 1;
+        }
+
+        /* ── Color swatches ── */
+        .color-row {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 9px;
+        }
+
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .color-swatch.active {
+            border-color: #fff;
+            transform: scale(1.2);
+        }
+
+        .color-picker-wrap {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .color-picker-wrap input[type="color"] {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .color-picker-icon {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            pointer-events: none;
+        }
+
+        /* ── Shape props section ── */
+        .shape-props-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(245,197,24,0.03);
+            flex-shrink: 0;
+        }
+
+        /* ── Annotations list ── */
+        #annotationList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 16px 12px;
+        }
+
+        .ann-empty {
+            font-size: 12px;
+            color: rgba(255,255,255,0.25);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .annotation-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 7px;
+            padding: 7px 9px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .ann-badge {
+            background: rgba(245,197,24,0.15);
+            color: #f5c518;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 5px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .ann-text {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ann-delete-btn {
+            color: rgba(255,100,100,0.4);
+            cursor: pointer;
+            font-size: 14px;
+            background: none;
+            border: none;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .ann-delete-btn:hover { color: rgba(255,100,100,0.9); }
+
+        /* ── Footer ── */
+        .sidebar-footer {
+            padding: 11px 16px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: #f5c518;
+            color: #1a2332;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .save-btn:hover { background: #e6b800; }
+
+        .save-btn:disabled {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.25);
+            cursor: not-allowed;
+        }
+
+        /* ── Canvas area ── */
+        #canvasArea {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e8eaed;
+            overflow: hidden;
+        }
+
+        .canvas-topbar {
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            padding: 7px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .canvas-hint {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .canvas-zoom {
+            font-size: 11px;
+            color: #bbb;
+            font-family: monospace;
+            margin-left: auto;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .canvas-card {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+            display: inline-block;
+        }
+
         #editCanvas {
-            border: 1px solid #e5e7eb;
+            display: block;
         }
-        .tool-active {
-            background-color: #3b82f6;
-            color: white;
+
+        .status-bar {
+            background: #fff;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding: 5px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
         }
+
+        .status-item {
+            font-size: 11px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+
+        /* ── Download area ── */
+        #downloadArea {
+            padding: 10px 16px;
+            background: rgba(34,197,94,0.08);
+            border-top: 1px solid rgba(34,197,94,0.2);
+        }
+
+        .download-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #22c55e;
+            margin-bottom: 4px;
+        }
+
+        .download-link {
+            font-size: 12px;
+            color: #f5c518;
+            text-decoration: none;
+        }
+
+        .download-link:hover { text-decoration: underline; }
     </style>
 </head>
-<!-- FIX CRITICAL: Layout renders below expected area - added flex-col + flex-1 -->
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <div class="flex-1 flex h-screen">
-        <!-- Left Panel -->
-        <div class="w-80 bg-white border-r border-gray-200 p-5 flex flex-col overflow-y-auto">
-            <h1 class="text-xl font-bold text-gray-800 mb-4">Editar PDF</h1>
-            
-            <!-- Upload PDF -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Archivo PDF</label>
-                <input type="file" id="pdfInput" accept=".pdf" 
-                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+<body style="margin:0; display:flex; height:100vh; overflow:hidden;">
+
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-dot">im</div>
+                <span class="logo-label">PDF Impresistem</span>
             </div>
+            <h1 class="sidebar-title">Editar PDF</h1>
+        </div>
 
-            <!-- Page Selector -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Página</label>
-                <input type="number" id="pageNum" value="1" min="1" 
-                    class="w-full border border-gray-300 rounded-xl py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-400">
-                <p id="pageCountDisplay" class="text-xs text-gray-500 mt-1 hidden">de <span id="totalPages">1</span> páginas</p>
-            </div>
-
-            <!-- Tool Selector -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Herramienta</label>
-                <div class="flex gap-2">
-                    <button type="button" id="toolText" onclick="selectTool('text')"
-                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg text-sm tool-active">
-                        T Texto
-                    </button>
-                </div>
-            </div>
-
-            <!-- Text Settings -->
-            <div class="mb-4 space-y-3">
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tamaño de fuente</label>
-                    <input type="number" id="fontSize" value="12" min="6" max="72" 
-                        class="w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Color</label>
-                    <input type="color" id="textColor" value="#000000" 
-                        class="w-full h-10 border border-gray-300 rounded-lg cursor-pointer">
-                </div>
-            </div>
-
-            <!-- Annotation List -->
-            <div class="mb-4 flex-1 overflow-auto">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Anotaciones</label>
-                <div id="annotationList" class="space-y-2">
-                    <p class="text-xs text-gray-400">Haz clic en el canvas para agregar texto</p>
-                </div>
-            </div>
-
-            <!-- Hidden input -->
-            <input type="hidden" name="anotaciones" id="anotaciones_input">
-
-            <!-- Buttons -->
-            <button type="button" id="saveBtn" onclick="saveChanges()" disabled
-                class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl mb-2 transition-all duration-200">
-                Guardar cambios
+        <!-- Archivo y página -->
+        <div class="sidebar-section">
+            <span class="section-label">Archivo</span>
+            <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
+            <button class="file-name-display" onclick="document.getElementById('pdfInput').click()">
+                Seleccionar archivo PDF...
             </button>
-
-            <!-- Download Link -->
-            <div id="downloadArea" class="mt-4 hidden">
-                <h3 class="text-lg font-bold text-green-700 mb-2">PDF editado</h3>
-                <a id="downloadLink" href="#" download class="text-blue-600 hover:underline">
-                    Descargar PDF
-                </a>
+            <div class="page-control">
+                <button class="page-nav-btn" onclick="switchPage(parseInt(pageNum.value) - 1)">‹</button>
+                <input type="number" id="pageNum" value="1" min="1" class="page-num-input">
+                <span class="page-total-label" id="pageCountDisplay" style="display:none;">de <span id="totalPages">1</span></span>
+                <button class="page-nav-btn" onclick="switchPage(parseInt(pageNum.value) + 1)">›</button>
             </div>
         </div>
 
-        <!-- Main Canvas Area -->
-        <div class="flex-1 p-5 overflow-auto flex items-center justify-center bg-gray-100">
-            <div class="bg-white rounded-xl shadow-lg p-4">
+        <!-- Herramientas -->
+        <div class="sidebar-section">
+            <span class="section-label">Herramientas</span>
+            <div class="tools-grid">
+                <span class="tool-group-label">Texto</span>
+                <button type="button" id="toolText" onclick="selectTool('text')" class="tool-btn tool-active">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                    <span class="tool-btn-label">Texto</span>
+                </button>
+                <button type="button" id="toolSelect" onclick="selectTool('select')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 1-3 7z"/></svg>
+                    <span class="tool-btn-label">Mover</span>
+                </button>
+                <button type="button" id="toolHighlight" onclick="selectTool('highlight')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="1"/></svg>
+                    <span class="tool-btn-label">Resaltar</span>
+                </button>
+                <span class="tool-group-label">Figuras</span>
+                <button type="button" id="toolRect" onclick="selectTool('rect')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
+                    <span class="tool-btn-label">Rect</span>
+                </button>
+                <button type="button" id="toolCircle" onclick="selectTool('circle')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+                    <span class="tool-btn-label">Círculo</span>
+                </button>
+                <button type="button" id="toolTriangle" onclick="selectTool('triangle')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4L3 20h18L12 4z"/></svg>
+                    <span class="tool-btn-label">Triángulo</span>
+                </button>
+                <button type="button" id="toolArrow" onclick="selectTool('arrow')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
+                    <span class="tool-btn-label">Flecha</span>
+                </button>
+                <button type="button" id="toolLine" onclick="selectTool('line')" class="tool-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"/></svg>
+                    <span class="tool-btn-label">Línea</span>
+                </button>
+                <div></div>
+                <button type="button" onclick="deleteSelected()" class="tool-btn tool-btn-delete">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    <span class="tool-btn-label">Eliminar seleccionado</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Propiedades texto -->
+        <div class="sidebar-section">
+            <span class="section-label">Texto</span>
+            <label class="prop-label">Tamaño de fuente</label>
+            <input type="number" id="fontSize" value="12" min="6" max="72" class="prop-input">
+            <label class="prop-label">Color de texto</label>
+            <div class="color-row">
+                <div class="color-swatch active" style="background:#000000;" onclick="setTextColor('#000000', this)"></div>
+                <div class="color-swatch" style="background:#f5c518;" onclick="setTextColor('#f5c518', this)"></div>
+                <div class="color-swatch" style="background:#ef4444;" onclick="setTextColor('#ef4444', this)"></div>
+                <div class="color-swatch" style="background:#3b82f6;" onclick="setTextColor('#3b82f6', this)"></div>
+                <div class="color-swatch" style="background:#22c55e;" onclick="setTextColor('#22c55e', this)"></div>
+                <div class="color-swatch" style="background:#ffffff; border-color: rgba(255,255,255,0.3);" onclick="setTextColor('#ffffff', this)"></div>
+                <div class="color-picker-wrap" title="Color personalizado">
+                    <input type="color" id="textColor" value="#000000">
+                    <span class="color-picker-icon">+</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Propiedades figura -->
+        <div class="shape-props-section">
+            <span class="section-label" style="color:rgba(245,197,24,0.45);">Figura</span>
+            <label class="prop-label">Color de relleno</label>
+            <div class="color-row">
+                <div class="color-swatch" style="background:transparent; border-color:rgba(255,255,255,0.2); position:relative;" onclick="setShapeFill('transparent', this)" title="Sin relleno">
+                    <span style="position:absolute; font-size:9px; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.3); pointer-events:none;">∅</span>
+                </div>
+                <div class="color-swatch active" style="background:#3b82f6;" onclick="setShapeFill('#3b82f6', this)"></div>
+                <div class="color-swatch" style="background:#f5c518;" onclick="setShapeFill('#f5c518', this)"></div>
+                <div class="color-swatch" style="background:#ef4444;" onclick="setShapeFill('#ef4444', this)"></div>
+                <div class="color-swatch" style="background:#22c55e;" onclick="setShapeFill('#22c55e', this)"></div>
+                <div class="color-swatch" style="background:#a855f7;" onclick="setShapeFill('#a855f7', this)"></div>
+                <div class="color-picker-wrap" title="Color personalizado">
+                    <input type="color" id="shapeColor" value="#3b82f6">
+                    <span class="color-picker-icon">+</span>
+                </div>
+            </div>
+            <label class="prop-label">Color de borde</label>
+            <div class="color-row">
+                <div class="color-swatch active" style="background:#3b82f6;" onclick="setShapeStroke('#3b82f6', this)"></div>
+                <div class="color-swatch" style="background:#f5c518;" onclick="setShapeStroke('#f5c518', this)"></div>
+                <div class="color-swatch" style="background:#ef4444;" onclick="setShapeStroke('#ef4444', this)"></div>
+                <div class="color-swatch" style="background:#1a2332;" onclick="setShapeStroke('#1a2332', this)"></div>
+                <div class="color-swatch" style="background:#ffffff; border-color:rgba(255,255,255,0.3);" onclick="setShapeStroke('#ffffff', this)"></div>
+                <div class="color-picker-wrap" title="Color personalizado">
+                    <input type="color" id="strokeColor" value="#3b82f6">
+                    <span class="color-picker-icon">+</span>
+                </div>
+            </div>
+            <div class="props-row">
+                <div>
+                    <label class="prop-label">Grosor</label>
+                    <input type="number" id="strokeWidth" value="2" min="0" max="20" class="prop-input">
+                </div>
+                <div>
+                    <label class="prop-label">Opacidad %</label>
+                    <input type="number" id="shapeOpacity" value="100" min="10" max="100" class="prop-input">
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista anotaciones -->
+        <div id="annotationList" style="flex:1; overflow-y:auto; padding:10px 16px 12px;">
+            <span class="section-label">Anotaciones</span>
+            <p class="ann-empty">Haz clic en el canvas para agregar elementos</p>
+        </div>
+
+        <input type="hidden" name="anotaciones" id="anotaciones_input">
+
+        <!-- Footer -->
+        <div class="sidebar-footer">
+            <button type="button" id="saveBtn" onclick="saveChanges()" disabled class="save-btn">
+                Guardar y descargar PDF
+            </button>
+            <div id="downloadArea" style="display:none; margin-top:10px;">
+                <p class="download-title">PDF listo</p>
+                <a id="downloadLink" href="#" download class="download-link">Descargar PDF editado</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvasArea">
+        <div class="canvas-topbar">
+            <span class="canvas-hint">Clic sobre texto del PDF para editarlo · Arrastra figuras para reposicionarlas</span>
+            <span class="canvas-zoom" id="zoomLabel">595 × 842 pt</span>
+        </div>
+        <div class="canvas-wrapper">
+            <div class="canvas-card">
                 <canvas id="editCanvas"></canvas>
             </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-item"><div class="status-dot"></div> Listo</div>
+            <div class="status-item" id="statusAnnotations">0 anotaciones</div>
+            <div class="status-item" id="statusPage">Pág 1</div>
         </div>
     </div>
 
@@ -101,10 +689,16 @@
         let pdfBase64 = null;
         let canvasWidth = 595;
         let canvasHeight = 842;
-        let currentPage = 1;
+        let currentPage = 1; // siempre entero
         let totalPages = 1;
         let pageAnnotations = {};
         let currentTool = 'text';
+        let pdfTextBlocks = [];
+        let canvasScale = 1.0;
+        let shapeStrokeColor = '#3b82f6';
+        let shapeFillColor = '#3b82f6';
+        let shapeStrokeWidth = 2;
+        let shapeOpacityVal = 1.0;
 
         const pdfInput = document.getElementById('pdfInput');
         const pageNum = document.getElementById('pageNum');
@@ -117,6 +711,53 @@
         const downloadArea = document.getElementById('downloadArea');
         const downloadLink = document.getElementById('downloadLink');
 
+        function setTextColor(hex, el) {
+            document.getElementById('textColor').value = hex;
+            document.querySelectorAll('.color-row .color-swatch').forEach(s => {
+                if (s.closest('.sidebar-section') && !s.closest('.shape-props-section')) {
+                    s.classList.remove('active');
+                }
+            });
+            if (el) el.classList.add('active');
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type === 'i-text') {
+                activeObj.set('fill', hex);
+                canvas.renderAll();
+            }
+        }
+
+        function setShapeFill(hex, el) {
+            shapeFillColor = hex;
+            const section = document.querySelector('.shape-props-section');
+            if (section) {
+                section.querySelectorAll('.color-row')[0]
+                    .querySelectorAll('.color-swatch')
+                    .forEach(s => s.classList.remove('active'));
+            }
+            if (el) el.classList.add('active');
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type !== 'i-text') {
+                activeObj.set('fill', hex === 'transparent' ? 'transparent' : hex);
+                canvas.renderAll();
+            }
+        }
+
+        function setShapeStroke(hex, el) {
+            shapeStrokeColor = hex;
+            const section = document.querySelector('.shape-props-section');
+            if (section) {
+                section.querySelectorAll('.color-row')[1]
+                    .querySelectorAll('.color-swatch')
+                    .forEach(s => s.classList.remove('active'));
+            }
+            if (el) el.classList.add('active');
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type !== 'i-text') {
+                activeObj.set('stroke', hex);
+                canvas.renderAll();
+            }
+        }
+
         function initCanvas() {
             canvas = new fabric.Canvas('editCanvas', {
                 selection: true
@@ -125,9 +766,20 @@
             canvas.renderAll();
 
             canvas.on('mouse:down', function(options) {
-                if (currentTool === 'text' && !options.target) {
-                    const pointer = canvas.getPointer(options.e);
-                    addText(pointer.x, pointer.y);
+                const pointer = canvas.getPointer(options.e);
+                if (options.target && currentTool !== 'select') return;
+                switch(currentTool) {
+                    case 'text':
+                        const existingBlock = findTextBlockAt(pointer.x, pointer.y);
+                        if (existingBlock) { addTextOverlay(existingBlock); }
+                        else { addText(pointer.x, pointer.y); }
+                        break;
+                    case 'rect':      addRect(pointer.x, pointer.y); break;
+                    case 'highlight': addHighlight(pointer.x, pointer.y); break;
+                    case 'circle':    addCircle(pointer.x, pointer.y); break;
+                    case 'triangle':  addTriangle(pointer.x, pointer.y); break;
+                    case 'arrow':     addArrow(pointer.x, pointer.y); break;
+                    case 'line':      addLine(pointer.x, pointer.y); break;
                 }
             });
         }
@@ -151,34 +803,254 @@
             updateAnnotationList();
         }
 
+        function findTextBlockAt(x, y) {
+            for (const block of pdfTextBlocks) {
+                if (x >= block.x0 && x <= block.x1 && y >= block.y0 && y <= block.y1) {
+                    return block;
+                }
+            }
+            return null;
+        }
+
+        function addTextOverlay(block) {
+            const width = block.x1 - block.x0;
+            const height = block.y1 - block.y0;
+
+            // Rectángulo blanco que tapa el texto original
+            const cover = new fabric.Rect({
+                left: block.x0,
+                top: block.y0,
+                width: width + 4,
+                height: height + 4,
+                fill: 'white',
+                stroke: 'transparent',
+                strokeWidth: 0,
+                selectable: false,
+                evented: false,
+                customType: 'cover'
+            });
+
+            // Texto nuevo pre-cargado con el texto original
+            const text = new fabric.IText(block.text, {
+                left: block.x0,
+                top: block.y0,
+                fontSize: Math.round(block.size * 0.75),
+                fill: textColorInput.value,
+                fontFamily: 'Arial',
+                customType: 'overlay'
+            });
+
+            text.on('changed', function() {
+                updateAnnotationList();
+            });
+
+            canvas.add(cover);
+            canvas.add(text);
+            canvas.setActiveObject(text);
+            text.enterEditing();
+            updateAnnotationList();
+        }
+
+        function addRect(x, y) {
+            const rect = new fabric.Rect({
+                left: x,
+                top: y,
+                width: 150,
+                height: 80,
+                fill: 'transparent',
+                stroke: textColorInput.value,
+                strokeWidth: 2,
+                selectable: true
+            });
+            rect.customType = 'rect';
+            canvas.add(rect);
+            canvas.setActiveObject(rect);
+            updateAnnotationList();
+        }
+
+        function addHighlight(x, y) {
+            const rect = new fabric.Rect({
+                left: x,
+                top: y,
+                width: 200,
+                height: 20,
+                fill: 'rgba(255, 235, 59, 0.4)',
+                stroke: 'transparent',
+                strokeWidth: 0,
+                selectable: true
+            });
+            rect.customType = 'highlight';
+            canvas.add(rect);
+            canvas.setActiveObject(rect);
+            updateAnnotationList();
+        }
+
+        function addCircle(x, y) {
+            const circle = new fabric.Circle({
+                left: x,
+                top: y,
+                radius: 50,
+                fill: shapeFillColor === 'transparent' ? 'transparent' : shapeFillColor,
+                stroke: shapeStrokeColor,
+                strokeWidth: shapeStrokeWidth,
+                opacity: shapeOpacityVal,
+                selectable: true,
+                customType: 'circle'
+            });
+            canvas.add(circle);
+            canvas.setActiveObject(circle);
+            updateAnnotationList();
+        }
+
+        function addTriangle(x, y) {
+            const triangle = new fabric.Triangle({
+                left: x,
+                top: y,
+                width: 100,
+                height: 86,
+                fill: shapeFillColor === 'transparent' ? 'transparent' : shapeFillColor,
+                stroke: shapeStrokeColor,
+                strokeWidth: shapeStrokeWidth,
+                opacity: shapeOpacityVal,
+                selectable: true,
+                customType: 'triangle'
+            });
+            canvas.add(triangle);
+            canvas.setActiveObject(triangle);
+            updateAnnotationList();
+        }
+
+        function addArrow(x, y) {
+            const points = [
+                { x: 0, y: 10 },
+                { x: 60, y: 10 },
+                { x: 60, y: 0 },
+                { x: 80, y: 15 },
+                { x: 60, y: 30 },
+                { x: 60, y: 20 },
+                { x: 0, y: 20 }
+            ];
+            const arrow = new fabric.Polygon(points, {
+                left: x,
+                top: y,
+                fill: shapeFillColor === 'transparent' ? 'transparent' : shapeFillColor,
+                stroke: shapeStrokeColor,
+                strokeWidth: shapeStrokeWidth,
+                opacity: shapeOpacityVal,
+                selectable: true,
+                customType: 'arrow'
+            });
+            canvas.add(arrow);
+            canvas.setActiveObject(arrow);
+            updateAnnotationList();
+        }
+
+        function addLine(x, y) {
+            const line = new fabric.Line([x, y, x + 120, y], {
+                stroke: shapeStrokeColor,
+                strokeWidth: shapeStrokeWidth,
+                opacity: shapeOpacityVal,
+                selectable: true,
+                customType: 'line'
+            });
+            canvas.add(line);
+            canvas.setActiveObject(line);
+            updateAnnotationList();
+        }
+
+        function deleteSelected() {
+            const active = canvas.getActiveObject();
+            if (!active) return;
+            if (active.type === 'activeSelection') {
+                active.forEachObject(obj => canvas.remove(obj));
+                canvas.discardActiveObject();
+            } else {
+                canvas.remove(active);
+            }
+            updateAnnotationList();
+            canvas.renderAll();
+        }
+
         function selectTool(tool) {
             currentTool = tool;
-            document.getElementById('toolText').classList.toggle('tool-active', tool === 'text');
+            const allTools = ['toolText','toolSelect','toolRect','toolHighlight',
+                              'toolCircle','toolTriangle','toolArrow','toolLine'];
+            allTools.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.classList.remove('tool-active');
+            });
+            const activeId = {
+                text: 'toolText', select: 'toolSelect',
+                rect: 'toolRect', highlight: 'toolHighlight',
+                circle: 'toolCircle', triangle: 'toolTriangle',
+                arrow: 'toolArrow', line: 'toolLine'
+            }[tool];
+            if (activeId) document.getElementById(activeId).classList.add('tool-active');
+
+            if (tool === 'select') {
+                canvas.isDrawingMode = false;
+                canvas.selection = true;
+                canvas.forEachObject(obj => { obj.selectable = true; obj.evented = true; });
+            } else {
+                canvas.selection = false;
+                canvas.forEachObject(obj => { obj.selectable = false; });
+            }
+            canvas.renderAll();
         }
 
         async function fetchPagePreview() {
             if (!pdfInput.files[0]) return;
-            
-            const formData = new FormData();
-            formData.append('pdf_file', pdfInput.files[0]);
-            formData.append('pagina', pageNum.value);
-            
+
+            // Leer el archivo UNA sola vez como ArrayBuffer
+            const fileBuffer = await pdfInput.files[0].arrayBuffer();
+            const fileName = pdfInput.files[0].name;
+            const fileType = pdfInput.files[0].type || 'application/pdf';
+
+            const makeFormData = () => {
+                const fd = new FormData();
+                fd.append('pdf_file', new Blob([fileBuffer], { type: fileType }), fileName);
+                fd.append('pagina', pageNum.value);
+                return fd;
+            };
+
             try {
-                const response = await fetch('/api/page_preview', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (data.image) {
-                    pdfBase64 = data.image;
+                const [previewRes, textRes] = await Promise.all([
+                    fetch('/api/page_preview', { method: 'POST', body: makeFormData() }),
+                    fetch('/api/extract_text', { method: 'POST', body: makeFormData() })
+                ]);
+
+                const previewData = await previewRes.json();
+                const textData = await textRes.json();
+
+                const rawBlocks = textData.blocks || [];
+
+                if (previewData.total_pages) {
+                    totalPages = previewData.total_pages;
+                    totalPagesSpan.textContent = totalPages;
+                    pageCountDisplay.classList.remove('hidden');
+                }
+
+                if (previewData.image) {
+                    pdfBase64 = previewData.image;
                     const img = new Image();
                     img.onload = function() {
                         const maxW = 800, maxH = 800;
                         let scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                        canvasScale = scale;
                         canvasWidth = img.width * scale;
                         canvasHeight = img.height * scale;
                         canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+
+                        // Escalar bloques de texto al tamaño real del canvas
+                        pdfTextBlocks = rawBlocks.map(b => ({
+                            text: b.text,
+                            x0: b.x0 * scale,
+                            y0: b.y0 * scale,
+                            x1: b.x1 * scale,
+                            y1: b.y1 * scale,
+                            size: b.size * scale
+                        }));
+
                         loadPageAnnotations();
                     };
                     img.src = pdfBase64;
@@ -190,18 +1062,38 @@
         }
 
         function saveCurrentPageAnnotations() {
-            const objects = canvas.getObjects().filter(o => o.type === 'i-text');
-            pageAnnotations[currentPage] = objects.map(obj => ({
-                left: obj.left,
-                top: obj.top,
-                text: obj.text,
-                fontSize: obj.fontSize,
-                fill: obj.fill,
-                width: obj.width,
-                height: obj.height,
-                scaleX: obj.scaleX,
-                scaleY: obj.scaleY
-            }));
+            const pageKey = parseInt(currentPage);
+            const objects = canvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'rect');
+            pageAnnotations[pageKey] = objects.map(obj => {
+                if (obj.type === 'i-text') {
+                    return {
+                        type: 'text',
+                        left: obj.left,
+                        top: obj.top,
+                        text: obj.text,
+                        fontSize: obj.fontSize,
+                        fill: obj.fill,
+                        width: obj.width,
+                        height: obj.height,
+                        scaleX: obj.scaleX,
+                        scaleY: obj.scaleY
+                    };
+                } else {
+                    return {
+                        type: 'rect',
+                        left: obj.left,
+                        top: obj.top,
+                        width: obj.width,
+                        height: obj.height,
+                        fill: obj.fill,
+                        stroke: obj.stroke,
+                        strokeWidth: obj.strokeWidth,
+                        scaleX: obj.scaleX,
+                        scaleY: obj.scaleY,
+                        customType: obj.customType
+                    };
+                }
+            });
         }
 
         function loadPageAnnotations() {
@@ -224,21 +1116,37 @@
         function restoreAnnotations() {
             if (pageAnnotations[currentPage]) {
                 pageAnnotations[currentPage].forEach(data => {
-                    const text = new fabric.IText(data.text, {
-                        left: data.left,
-                        top: data.top,
-                        fontSize: data.fontSize,
-                        fill: data.fill,
-                        fontFamily: 'Arial',
-                        scaleX: data.scaleX || 1,
-                        scaleY: data.scaleY || 1
-                    });
-                    
-                    text.on('changed', function() {
-                        updateAnnotationList();
-                    });
-                    
-                    canvas.add(text);
+                    if (data.type === 'text' || !data.type) {
+                        const text = new fabric.IText(data.text, {
+                            left: data.left,
+                            top: data.top,
+                            fontSize: data.fontSize,
+                            fill: data.fill,
+                            fontFamily: 'Arial',
+                            scaleX: data.scaleX || 1,
+                            scaleY: data.scaleY || 1
+                        });
+                        
+                        text.on('changed', function() {
+                            updateAnnotationList();
+                        });
+                        
+                        canvas.add(text);
+                    } else if (data.type === 'rect') {
+                        const rect = new fabric.Rect({
+                            left: data.left,
+                            top: data.top,
+                            width: data.width,
+                            height: data.height,
+                            fill: data.fill,
+                            stroke: data.stroke,
+                            strokeWidth: data.strokeWidth,
+                            scaleX: data.scaleX || 1,
+                            scaleY: data.scaleY || 1
+                        });
+                        rect.customType = data.customType;
+                        canvas.add(rect);
+                    }
                 });
             }
             updateAnnotationList();
@@ -252,10 +1160,10 @@
         }
 
         function updateAnnotationList() {
-            const objects = canvas.getObjects().filter(o => o.type === 'i-text');
+            const objects = canvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'rect');
             
             if (objects.length === 0) {
-                annotationList.innerHTML = '<p class="text-xs text-gray-400">Haz clic en el canvas para agregar texto</p>';
+                annotationList.innerHTML = '<p class="text-xs text-gray-400">Haz clic en el canvas para agregar elementos</p>';
                 return;
             }
             
@@ -273,7 +1181,15 @@
                     
                     const textPreview = document.createElement('span');
                     textPreview.className = 'text-gray-600';
-                    textPreview.textContent = ann.text.substring(0, 30) + (ann.text.length > 30 ? '...' : '');
+                    if (ann.type === 'text' || !ann.type) {
+                        textPreview.textContent = '📝 ' + (ann.text || '').substring(0, 30) + ((ann.text || '').length > 30 ? '...' : '');
+                    } else if (ann.type === 'rect' && ann.customType === 'highlight') {
+                        textPreview.textContent = '◼ Resaltar';
+                    } else if (ann.type === 'rect' && ann.customType === 'rect') {
+                        textPreview.textContent = '▭ Rect';
+                    } else {
+                        textPreview.textContent = '▭ Rectángulo';
+                    }
                     
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'float-right text-red-500 hover:text-red-700';
@@ -313,17 +1229,26 @@
                 const pageAnns = pageAnnotations[page];
                 if (pageAnns && pageAnns.length > 0) {
                     pageAnns.forEach(ann => {
-                        const pos_x = (ann.left / canvasWidth) * 100;
-                        const pos_y = (ann.top / canvasHeight) * 100;
-                        
-                        annotations.push({
-                            pagina: parseInt(page),
-                            texto: ann.text,
-                            pos_x: Math.round(pos_x),
-                            pos_y: Math.round(pos_y),
-                            fontsize: ann.fontSize,
-                            color: ann.fill
-                        });
+                        if (ann.type === 'rect' && ann.customType === 'cover') {
+                            annotations.push({
+                                tipo: 'cover',
+                                pagina: parseInt(page),
+                                x0_abs: ann.left,
+                                y0_abs: ann.top,
+                                x1_abs: ann.left + ann.width * (ann.scaleX || 1),
+                                y1_abs: ann.top + ann.height * (ann.scaleY || 1)
+                            });
+                        } else if (ann.type === 'text') {
+                            annotations.push({
+                                tipo: 'text',
+                                pagina: parseInt(page),
+                                texto: ann.text,
+                                x_abs: ann.left,
+                                y_abs: ann.top,
+                                fontsize: ann.fontSize,
+                                color: ann.fill
+                            });
+                        }
                     });
                 }
             });
@@ -335,6 +1260,7 @@
             
             const formData = new FormData();
             formData.append('pdf_file', pdfInput.files[0]);
+            formData.append('canvas_scale', canvasScale);
             formData.append('anotaciones', JSON.stringify(annotations));
             
             try {
@@ -352,7 +1278,7 @@
                     if (link) {
                         downloadLink.href = link.getAttribute('href');
                         downloadLink.download = link.download;
-                        downloadArea.classList.remove('hidden');
+                        downloadArea.style.display = 'block';
                     }
                 }
             } catch (e) {
@@ -394,6 +1320,41 @@
         });
 
         initCanvas();
+
+        document.getElementById('strokeWidth').addEventListener('change', function() {
+            shapeStrokeWidth = parseInt(this.value) || 2;
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type !== 'i-text') {
+                activeObj.set('strokeWidth', shapeStrokeWidth);
+                canvas.renderAll();
+            }
+        });
+
+        document.getElementById('shapeOpacity').addEventListener('change', function() {
+            shapeOpacityVal = Math.max(0.1, Math.min(1, parseInt(this.value) / 100));
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type !== 'i-text') {
+                activeObj.set('opacity', shapeOpacityVal);
+                canvas.renderAll();
+            }
+        });
+
+        document.getElementById('shapeColor').addEventListener('change', function() {
+            setShapeFill(this.value, null);
+        });
+
+        document.getElementById('strokeColor').addEventListener('change', function() {
+            setShapeStroke(this.value, null);
+        });
+
+        document.getElementById('textColor').addEventListener('change', function() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type === 'i-text') {
+                activeObj.set('fill', this.value);
+                canvas.renderAll();
+            }
+        });
+
     </script>
 </body>
 </html>

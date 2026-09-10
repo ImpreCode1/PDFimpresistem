@@ -285,7 +285,11 @@
                                 <button type="button" id="removeFileBtn" class="text-red-500 text-sm font-semibold hover:text-red-700">❌ Eliminar archivo</button>
                             </div>
                         </div>
-                        <button type="submit" class="btn-primary">Convertir a Word</button>
+                        <button type="submit" id="btnConvertirWord" class="btn-primary" onclick="mostrarCargandoWord()">Convertir a Word</button>
+                            <div id="wordCargando" style="display:none; text-align:center; margin-top:8px; padding:10px; background:#EBF0FF; border-radius:10px;">
+                                <p style="font-size:13px; color:#1B2A4A; font-weight:500;">⏳ Convirtiendo documento, por favor espera...</p>
+                                <p style="font-size:12px; color:#6B7280; margin-top:4px;">Documentos con muchas páginas pueden tardar hasta 2 minutos.</p>
+                            </div>
                     </form>
                     {% if output_file %}
                     <div style="text-align:center; margin-top:8px;">
@@ -543,7 +547,7 @@
                     <a href="/reorder_ui" class="btn-primary">Abrir interfaz interactiva</a>
                 </div>
 
-                <!-- Eliminar PDF -->
+                <!-- Organizar PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="organizar delete remove pages">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <div class="icon-box" style="background:#FCE7F3;">
@@ -552,7 +556,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Eliminar PDF</h3>
+                            <h3 style="font-size:16px; font-weight:700; color:var(--color-text); margin:0;">Organizar PDF</h3>
                             <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Selecciona y elimina las páginas que no necesitas de tu PDF. Elige una o varias páginas a eliminar visualmente. Perfecto para quitar páginas en blanco o secciones no deseadas.</p>
                         </div>
                     </div>
@@ -1399,6 +1403,16 @@
             document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
             filtrarHerramientas();
+        }
+
+        function mostrarCargandoWord() {
+            const archivo = document.getElementById('pdf_file');
+            if (!archivo || !archivo.files || archivo.files.length === 0) return;
+            document.getElementById('wordCargando').style.display = 'block';
+            document.getElementById('btnConvertirWord').disabled = true;
+            document.getElementById('btnConvertirWord').textContent = 'Convirtiendo...';
+            document.getElementById('btnConvertirWord').style.opacity = '0.6';
+            document.getElementById('btnConvertirWord').style.cursor = 'not-allowed';
         }
 
         function filtrarHerramientas() {
