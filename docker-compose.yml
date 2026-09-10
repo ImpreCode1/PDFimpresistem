@@ -4,13 +4,11 @@
 services:
   web:
     build: .
-    container_name: pdfimpresistem
-    # Puerto host:contenedor — gunicorn expone 8000 dentro
-    ports:
-      - "8000:8000"
-    # Variables de entorno desde archivo externo (no se hornean en la imagen)
     env_file:
       - .env
+    ports:
+      - "8000:8000"
+
     # Persistencia de archivos subidos/generados
     volumes:
       - ./uploads:/app/uploads
