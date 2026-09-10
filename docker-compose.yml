@@ -14,3 +14,7 @@ services:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
     restart: unless-stopped
+
+    #Entorno
+    environment:
+      - FLASK_ENV=development
