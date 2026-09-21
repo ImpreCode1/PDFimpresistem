@@ -70,6 +70,7 @@ Talisman(
     content_security_policy=csp,
     content_security_policy_nonce_in=['script-src'],
     force_https=False,
+    session_cookie_secure=False,
 )
 
 # Flask-Limiter: límites por defecto para todas las rutas. Las rutas de
