@@ -327,13 +327,7 @@ def reduce_pdf():
                     new_bytes = output_io.getvalue()
 
                     if len(new_bytes) < len(img_bytes):
-                        doc.update_stream(xref, new_bytes)
-                        doc.xref_set_key(xref, "Filter", "/DCTDecode")
-                        doc.xref_set_key(xref, "Width", str(w))
-                        doc.xref_set_key(xref, "Height", str(h))
-                        colorspace = "/DeviceGray" if pil_img.mode == 'L' else "/DeviceRGB"
-                        doc.xref_set_key(xref, "ColorSpace", colorspace)
-                        doc.xref_set_key(xref, "BitsPerComponent", "8")
+                        page.replace_image(xref, stream=new_bytes)
                 except Exception:
                     continue
 
