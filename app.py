@@ -1,6 +1,6 @@
 # app.py — slim version after refactor
 
-from flask import Flask
+from flask import Flask, request
 import os
 from datetime import timedelta
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
@@ -81,6 +81,15 @@ limiter = Limiter(
     app=app,
     default_limits=['200 per day', '50 per hour'],
 )
+
+
+@app.after_request
+def add_no_cache_headers(response):
+    """Evita el caché en respuestas POST y en descargas de archivos."""
+    if request.method == 'POST' or request.path.startswith('/download/'):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 # Register blueprints
