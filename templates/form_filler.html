@@ -333,7 +333,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         const campos = {{ campos|tojson }};
         let canvas;
         let canvasWidth = 595;

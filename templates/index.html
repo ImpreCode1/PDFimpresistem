@@ -116,7 +116,7 @@
 
 <body class="flex flex-col h-screen" onload="limpiarTokenURL()">
     <!-- Script para limpiar token de URL -->
-    <script>
+    <script nonce="{{ csp_nonce() }}">
     function limpiarTokenURL() {
         if (window.location.search.includes('token=')) {
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -989,7 +989,7 @@
         </div>
     </footer>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         function validarTamano(file, maxMB = 30) {
             if (file.size > maxMB * 1024 * 1024) {
                 alert(`El archivo "${file.name}" supera el límite de ${maxMB} MB.`);

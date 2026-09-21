@@ -14,6 +14,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 import pytz
 import atexit
 
@@ -51,6 +52,22 @@ app.config['SESSION_COOKIE_SECURE'] = es_produccion
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
 
+# Talisman: políticas de seguridad por headers (CSP incluido). Los scripts
+# inline de las plantillas usan nonce ({{ csp_nonce() }}); los estilos inline
+# requieren 'unsafe-inline' en style-src para no romper la UI.
+csp = {
+    'default-src': "'self'",
+    'img-src': ["'self'", 'data:', 'https:'],
+    'script-src': ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'],
+    'style-src': ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],
+}
+Talisman(
+    app,
+    content_security_policy=csp,
+    content_security_policy_nonce_in=['script-src'],
+    force_https=False,
+)
+
 # Flask-Limiter: límites por defecto para todas las rutas. Las rutas de
 # conversión procesan archivos grandes y consumen CPU/IO, por lo que el
 # límite diario y por hora protege el servidor de abuso o uso excesivo.
@@ -59,34 +76,6 @@ limiter = Limiter(
     app=app,
     default_limits=['200 per day', '50 per hour'],
 )
-
-
-@app.after_request
-def add_security_headers(response):
-    """
-    Añade headers de seguridad base a todas las respuestas.
-
-    Args:
-        response (Response): Objeto response de Flask.
-
-    Returns:
-        Response: Objeto response con headers de seguridad añadidos.
-    """
-    # CSP: restringe fuentes de scripts, estilos, imágenes y conexiones.
-    # Se permiten los CDN usados por las plantillas (tailwind, pdf-lib,
-    # jszip, sortablejs) tanto en script como en style.
-    response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "img-src 'self' data: https:; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-        "script-src 'self' 'unsafe-inline' "
-        "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; "
-        "font-src 'self' data:; "
-        "connect-src 'self'"
-    )
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    return response
 
 
 # Register blueprints
