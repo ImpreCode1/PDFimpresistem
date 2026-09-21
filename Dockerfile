@@ -41,4 +41,4 @@ ENV FLASK_ENV=production
 
 # 11) Comando por defecto: gunicorn como WSGI (independiente de Apache/mod_wsgi)
 #     --workers 2, timeout 120s por PDFs grandes/conversiones
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
