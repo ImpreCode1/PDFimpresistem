@@ -295,6 +295,7 @@
 
             <div class="fields-scroll">
                 <form action="/form_filler/guardar" method="POST" id="formFields">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="pdf_nombre" value="{{ pdf_nombre }}">
 
                     {% for pagina in campos|groupby('pagina') %}
@@ -403,6 +404,7 @@
             try {
                 const response = await fetch('/api/page_preview_by_name', {
                     method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: formData
                 });
                 const data = await response.json();

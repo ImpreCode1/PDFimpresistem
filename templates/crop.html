@@ -341,6 +341,7 @@
             try {
                 const response = await fetch('/api/page_preview', {
                     method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: formData
                 });
                 const data = await response.json();
@@ -383,6 +384,7 @@
             try {
                 const response = await fetch('/crop', {
                     method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: formData
                 });
                 
@@ -466,6 +468,7 @@
             try {
                 const response = await fetch('/crop', {
                     method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: formData
                 });
 

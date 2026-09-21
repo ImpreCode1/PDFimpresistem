@@ -15,6 +15,7 @@ from apscheduler.triggers.cron import CronTrigger
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from flask_wtf import CSRFProtect
 import pytz
 import atexit
 
@@ -31,6 +32,10 @@ if not _secret_key:
     )
 app.secret_key = _secret_key
 
+# CSRF: protege todos los endpoints POST (enviado como hidden input en los
+# forms nativos y como header X-CSRFToken en las llamadas fetch).
+csrf = CSRFProtect(app)
+
 # JWT_SECRET se valida al inicio para fallo rápido si no está definida.
 # Se lee de variable de entorno sin fallback, igual que SECRET_KEY.
 _jwt_secret = os.environ.get('JWT_SECRET')
@@ -40,15 +45,13 @@ if not _jwt_secret:
         'JWT_SECRET) antes de iniciar la aplicación.'
     )
 
-# SESSION_COOKIE_SECURE se activa solo en producción (HTTPS). En desarrollo
-# local (FLASK_ENV != production) se desactiva para permitir HTTP.
-es_produccion = os.getenv('FLASK_ENV') == 'production'
+# SESSION_COOKIE_SECURE se desactiva (False) para permitir la app por HTTP.
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_PERMANENT'] = True
 app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
 app.config['SESSION_COOKIE_NAME'] = 'pdf_session'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = es_produccion
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
 

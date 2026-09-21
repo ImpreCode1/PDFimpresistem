@@ -201,6 +201,7 @@
             try {
                 const response = await fetch('/api/thumbnails', {
                     method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: formData
                 });
                 const data = await response.json();
@@ -328,6 +329,7 @@
             try {
                 const response = await fetch('/organize', {
                     method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: formData
                 });
                 
