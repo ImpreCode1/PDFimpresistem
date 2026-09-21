@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Organizar PDF — PDF Impresistem</title>
+{% extends "base.html" %}
+
+{% block title %}Organizar PDF — PDF Impresistem{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <style>
         .thumbnail-card {
@@ -87,8 +87,9 @@
             letter-spacing: 0.5px;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block body %}
     <div id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
@@ -347,5 +348,4 @@
             }
         }
     </script>
-</body>
-</html>
+{% endblock %}

@@ -59,7 +59,8 @@ csp = {
     'default-src': "'self'",
     'img-src': ["'self'", 'data:', 'https:'],
     'script-src': ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'],
-    'style-src': ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],
+    'style-src': ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'fonts.googleapis.com'],
+    'font-src': ['fonts.gstatic.com'],
 }
 Talisman(
     app,

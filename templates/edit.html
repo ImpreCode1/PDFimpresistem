@@ -1,9 +1,10 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Editar PDF — PDF Impresistem</title>
+{% extends "base.html" %}
 
+{% block title %}Editar PDF — PDF Impresistem{% endblock %}
+
+{% block body_attrs %} style="margin:0; display:flex; height:100vh; overflow:hidden;"{% endblock %}
+
+{% block extra_head %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
@@ -512,9 +513,9 @@
 
         .download-link:hover { text-decoration: underline; }
     </style>
-</head>
-<body style="margin:0; display:flex; height:100vh; overflow:hidden;">
+{% endblock %}
 
+{% block body %}
     <div id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
@@ -1356,5 +1357,4 @@
         });
 
     </script>
-</body>
-</html>
+{% endblock %}

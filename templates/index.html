@@ -1,120 +1,16 @@
-﻿<!-- Templates Index -->
-<!DOCTYPE html>
-<html lang="es">
+﻿{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF IMPRESISTEM S.A.S</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet" integrity="sha384-wX5sB6awg8mA/LNUO33Fgmuo2WOabAoZk9FniJMhPBSgWNvj/kfIGu9jZRUsjowdI" crossorigin="anonymous">
+{% block title %}PDF IMPRESISTEM S.A.S{% endblock %}
+
+{% block body_class %}flex flex-col h-screen{% endblock %}
+
+{% block extra_head %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    <link rel="icon" href="https://cdn.icon-icons.com/icons2/2753/PNG/512/ext_pdf_filetype_icon_176234.png">
+{% endblock %}
 
-    <style>
-        :root {
-            --color-primary: #1B2A4A;
-            --color-accent: #F5C400;
-            --color-accent-dark: #D4A900;
-            --color-bg: #F4F5F7;
-            --color-surface: #FFFFFF;
-            --color-border: #E2E5EA;
-            --color-text: #1B2A4A;
-            --color-muted: #6B7280;
-        }
-        body { background-color: var(--color-bg); color: var(--color-text); }
-        .tool-card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: box-shadow 0.2s, transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .tool-card:hover {
-            box-shadow: 0 8px 24px rgba(27,42,74,0.12);
-            transform: translateY(-2px);
-        }
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .filter-pill {
-            padding: 6px 18px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            border: 1.5px solid var(--color-border);
-            background: var(--color-surface);
-            color: var(--color-muted);
-            transition: all 0.15s;
-        }
-        .filter-pill:hover { border-color: var(--color-accent); color: var(--color-primary); }
-        .filter-pill.active {
-            background: var(--color-primary);
-            border-color: var(--color-primary);
-            color: #fff;
-        }
-        .search-bar {
-            width: 100%;
-            max-width: 560px;
-            background: var(--color-surface);
-            border: 1.5px solid var(--color-border);
-            border-radius: 12px;
-            padding: 12px 20px 12px 44px;
-            font-size: 15px;
-            color: var(--color-text);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .search-bar:focus { border-color: var(--color-primary); }
-        .btn-primary {
-            background: var(--color-primary);
-            color: #fff;
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            transition: background 0.15s;
-            text-align: center;
-            display: block;
-        }
-        .btn-primary:hover { background: #243860; }
-        .btn-accent {
-            background: var(--color-accent);
-            color: var(--color-primary);
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 600;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            transition: background 0.15s;
-            text-align: center;
-            display: block;
-        }
-        .btn-accent:hover { background: var(--color-accent-dark); }
-        #tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        @media (max-width: 900px) { #tool-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 560px) { #tool-grid { grid-template-columns: 1fr; } }
-        .card-hidden { display: none !important; }
-    </style>
-</head>
-
-<body class="flex flex-col h-screen" onload="limpiarTokenURL()">
+{% block header %}
     <!-- Script para limpiar token de URL -->
     <script nonce="{{ csp_nonce() }}">
     function limpiarTokenURL() {
@@ -122,9 +18,10 @@
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     }
+    document.addEventListener('DOMContentLoaded', limpiarTokenURL);
     </script>
 
-    <header style="background: var(--color-primary); padding: 14px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+    <header style="background: var(--navy-900); padding: 14px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <img src="/logos/logo2.png"
@@ -142,7 +39,9 @@
             </form>
         </div>
     </header>
+{% endblock %}
 
+{% block body %}
     <main class="flex-grow overflow-y-auto">
         <!-- Hero section with search and filters -->
         <div style="text-align: center; padding: 48px 24px 32px;">
@@ -182,7 +81,7 @@
                 <!-- Unir PDFs -->
                 <div class="tool-card" data-cat="basico" data-name="unir pdfs combinar merge">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#EBF0FF;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#1B2A4A" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2"></path>
                             </svg>
@@ -198,7 +97,7 @@
                 <!-- Separar PDF -->
                 <div class="tool-card" data-cat="basico" data-name="separar pdf split">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#EBF0FF;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#1B2A4A" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M15 7h3m-3 3h2m-2 3h1"></path>
                             </svg>
@@ -227,12 +126,12 @@
 
                 <!-- Convertir PDF a PowerPoint -->
                 <!-- NOTA: No existe herramienta PPTX -> PDF. La conversión de
-                     presentaciones a PDF se hace de forma nativa con PowerPoint
-                     de escritorio (Guardar como > PDF), evitando la dependencia
-                     de LibreOffice que no está instalada en los equipos. -->
+                    presentaciones a PDF se hace de forma nativa con PowerPoint
+                    de escritorio (Guardar como > PDF), evitando la dependencia
+                    de LibreOffice que no está instalada en los equipos. -->
                 <div class="tool-card" data-cat="convertir" data-name="convertir ppt powerpoint presentacion pdf a pptx">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FFF3CD;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#9A7800" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
                             </svg>
@@ -261,7 +160,7 @@
                 <!-- Convertir a Word -->
                 <div class="tool-card" data-cat="convertir" data-name="convertir worddoc documento editable">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#E8F5E9;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#2E7D32" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
@@ -301,7 +200,7 @@
                 <!-- Rotar PDF -->
                 <div class="tool-card" data-cat="basico" data-name="rotar pdf orientation giro">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FEE2E2;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#B91C1C" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -343,7 +242,7 @@
                 <!-- Extraer páginas PDF -->
                 <div class="tool-card" data-cat="basico" data-name="extraer paginas extract page">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#E0F2FE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#0369A1" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                             </svg>
@@ -381,7 +280,7 @@
                 <!-- Marca de agua -->
                 <div class="tool-card" data-cat="basico" data-name="marca agua watermark stamp">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#EDE9FE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#5B21B6" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
                             </svg>
@@ -419,7 +318,7 @@
                 <!-- Proteger PDF -->
                 <div class="tool-card" data-cat="seguridad" data-name="proteger pdf password seguro encrypt">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FEF9C3;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#854D0E" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                             </svg>
@@ -458,7 +357,7 @@
                 <!-- Desbloquear PDF -->
                 <div class="tool-card" data-cat="seguridad" data-name="desbloquear unlock remove password">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#DCFCE7;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#166534" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
                             </svg>
@@ -496,7 +395,7 @@
                 <!-- Aplanar PDF -->
                 <div class="tool-card" data-cat="basico" data-name="aplanar flatten form fields">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#F3F4F6;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#374151" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
@@ -533,7 +432,7 @@
                 <!-- Ordenar PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="ordenar reorder pages">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#CFFAFE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#0E7490" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                             </svg>
@@ -549,7 +448,7 @@
                 <!-- Organizar PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="organizar delete remove pages">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FCE7F3;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#9D174D" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
@@ -565,7 +464,7 @@
                 <!-- Números de página -->
                 <div class="tool-card" data-cat="intermedio" data-name="numeros pagina page numbers numbering">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#EDE9FE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#5B21B6" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
                             </svg>
@@ -607,7 +506,7 @@
                 <!-- Comprimir PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="comprimir compress optimize size">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FFEDD5;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#C2410C" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
@@ -649,7 +548,7 @@
                 <!-- Reducir tamaño PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="reducir tamaño shrink reduce smaller smallerfile">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#DBEAFE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#1E40AF" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                             </svg>
@@ -696,7 +595,7 @@
                 <!-- PDF a PNG/JPG -->
                 <div class="tool-card" data-cat="convertir" data-name="pdf a imagen png jpg image">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FFE4E6;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#BE123C" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
@@ -736,7 +635,7 @@
                 <!-- JPG a PDF -->
                 <div class="tool-card" data-cat="convertir" data-name="jpg a pdf imagen photo">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#ECFDF5;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#065F46" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
@@ -773,7 +672,7 @@
                 <!-- Recortar PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="recortar crop trim margins">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FEF3C7;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#92400E" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
                             </svg>
@@ -789,7 +688,7 @@
                 <!-- Reparar PDF -->
                 <div class="tool-card" data-cat="intermedio" data-name="reparar repair fix corrupt">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#FEE2E2;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#991B1B" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -827,7 +726,7 @@
                 <!-- PDF a PDF/A -->
                 <div class="tool-card" data-cat="intermedio" data-name="pdf a pdfa archive iso">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#D1FAE5;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#065F46" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
@@ -868,7 +767,7 @@
                 <!-- Rellenador de formularios -->
                 <div class="tool-card" data-cat="avanzado" data-name="rellenar form fields fill">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#DBEAFE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#1E40AF" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
@@ -899,7 +798,7 @@
                 <!-- Firmar PDF -->
                 <div class="tool-card" data-cat="avanzado" data-name="firmar sign signature">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#EDE9FE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#4C1D95" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                             </svg>
@@ -921,7 +820,7 @@
                 <!-- PDF a Excel -->
                 <div class="tool-card" data-cat="convertir" data-name="pdf a excel spreadsheet tables">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#D1FAE5;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#065F46" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
@@ -957,7 +856,7 @@
                 <!-- Editar PDF -->
                 <div class="tool-card" data-cat="avanzado" data-name="editar edit text">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box" style="background:#DBEAFE;">
+                        <div class="icon-box">
                             <svg class="w-6 h-6" fill="none" stroke="#1E40AF" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
@@ -975,8 +874,10 @@
             </div>
         </div>
     </main>
+{% endblock %}
 
-    <footer style="background: var(--color-primary); padding: 20px 24px; margin-top: auto;">
+{% block footer %}
+    <footer style="background: var(--navy-900); padding: 20px 24px; margin-top: auto;">
         <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <img src="/logos/logo2.png"
@@ -988,7 +889,9 @@
             </span>
         </div>
     </footer>
+{% endblock %}
 
+{% block scripts %}
     <script nonce="{{ csp_nonce() }}">
         function validarTamano(file, maxMB = 30) {
             if (file.size > maxMB * 1024 * 1024) {
@@ -1373,6 +1276,4 @@
             if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
         }
     </script>
-</body>
-
-</html>
+{% endblock %}

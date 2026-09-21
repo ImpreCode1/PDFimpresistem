@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Ordenar PDF — PDF Impresistem</title>
+{% extends "base.html" %}
+
+{% block title %}Ordenar PDF — PDF Impresistem{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -88,8 +88,9 @@
             text-transform: uppercase;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block body %}
     <div id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
@@ -342,5 +343,4 @@
             }
         }
     </script>
-</body>
-</html>
+{% endblock %}

@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Recortar PDF — PDF Impresistem</title>
+{% extends "base.html" %}
+
+{% block title %}Recortar PDF — PDF Impresistem{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
@@ -35,8 +35,9 @@
             margin-bottom: 0;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block body %}
     <div id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
@@ -485,5 +486,4 @@
             }
         };
     </script>
-</body>
-</html>
+{% endblock %}

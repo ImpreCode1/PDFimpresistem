@@ -1,0 +1,140 @@
+/* site.css — Design tokens y componentes compartidos PDF Impresistem */
+:root {
+    --navy-900: #0B1730;
+    --navy-800: #122452;
+    --gold-500: #F5B400;
+    --gold-600: #DB9E00;
+    --bg: #F3F4F7;
+    --card: #FFFFFF;
+    --border: #E4E7EE;
+    --text-900: #101828;
+    --text-600: #5B6472;
+    --text-400: #8A93A6;
+
+    /* Aliases de compatibilidad: el index usa var(--color-*) en estilos inline */
+    --color-primary: var(--navy-900);
+    --color-accent: var(--gold-500);
+    --color-accent-dark: var(--gold-600);
+    --color-bg: var(--bg);
+    --color-surface: var(--card);
+    --color-border: var(--border);
+    --color-text: var(--text-900);
+    --color-muted: var(--text-600);
+}
+
+body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-900);
+}
+
+h1, h2, h3 {
+    font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+}
+
+.site-header { background: var(--navy-900); }
+
+/* ── Botones ── */
+.btn-primary {
+    background: var(--navy-900);
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+    display: block;
+}
+.btn-primary:hover { background: var(--navy-800); }
+
+.btn-accent {
+    background: var(--gold-500);
+    color: var(--navy-900);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+    display: block;
+}
+.btn-accent:hover { background: var(--gold-600); }
+
+/* ── Tarjeta de herramienta ── */
+.tool-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    transition: box-shadow 0.2s, transform 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.tool-card:hover {
+    box-shadow: 0 8px 24px rgba(11, 23, 48, 0.12);
+    transform: translateY(-2px);
+}
+
+.icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--navy-900);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.icon-box svg { stroke: var(--gold-500) !important; }
+
+/* ── Filtros ── */
+.filter-pill {
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--text-600);
+    transition: all 0.15s;
+}
+.filter-pill:hover { border-color: var(--gold-500); color: var(--navy-900); }
+.filter-pill.active {
+    background: var(--navy-900);
+    border-color: var(--navy-900);
+    color: #fff;
+}
+
+/* ── Búsqueda ── */
+.search-bar {
+    width: 100%;
+    max-width: 560px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px 12px 44px;
+    font-size: 15px;
+    color: var(--text-900);
+    outline: none;
+    transition: border-color 0.2s;
+}
+.search-bar:focus { border-color: var(--navy-900); }
+
+/* ── Grilla ── */
+#tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+@media (max-width: 900px) { #tool-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { #tool-grid { grid-template-columns: 1fr; } }
+.card-hidden { display: none !important; }

@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Rellenar formulario — PDF Impresistem</title>
+{% extends "base.html" %}
+
+{% block title %}Rellenar formulario — PDF Impresistem{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
@@ -258,8 +258,9 @@
             animation: pulse 1s ease-in-out infinite;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block body %}
     <!-- Top bar -->
     <div class="form-topbar">
         <div class="form-logo">im</div>
@@ -494,5 +495,4 @@
 
         window.addEventListener('DOMContentLoaded', initCanvas);
     </script>
-</body>
-</html>
+{% endblock %}
