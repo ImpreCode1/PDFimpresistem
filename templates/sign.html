@@ -4,7 +4,7 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="/static/js/vendor/fabric-5.3.1.min.js"></script>
     <style>
         #drawCanvas {
             cursor: crosshair;
@@ -56,7 +56,7 @@
         <div class="sidebar-section">
             <span class="section-label">Archivo PDF</span>
             <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
-            <div class="file-upload-zone" onclick="document.getElementById('pdfInput').click()">
+            <div class="file-upload-zone" id="btnSelectPdf">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
@@ -68,10 +68,10 @@
         <div class="sidebar-section">
             <span class="section-label">Página</span>
             <div class="page-control">
-                <button class="page-nav-btn" onclick="changePageNum(-1)">‹</button>
+                <button class="page-nav-btn" id="pagePrev">‹</button>
                 <input type="number" id="pageNum" value="1" min="1" class="page-num-input">
                 <span class="page-total-label" id="pageTotalLabel"></span>
-                <button class="page-nav-btn" onclick="changePageNum(1)">›</button>
+                <button class="page-nav-btn" id="pageNext">›</button>
             </div>
         </div>
 
@@ -79,8 +79,8 @@
         <div class="sidebar-section">
             <span class="section-label">Firma</span>
             <div class="tab-row">
-                <button type="button" id="tabUpload" onclick="switchTab('upload')" class="tab-btn tab-active">Subir imagen</button>
-                <button type="button" id="tabDraw" onclick="switchTab('draw')" class="tab-btn">Dibujar</button>
+                <button type="button" id="tabUpload" class="tab-btn tab-active">Subir imagen</button>
+                <button type="button" id="tabDraw" class="tab-btn">Dibujar</button>
             </div>
 
             <div id="tabUploadContent">
@@ -95,10 +95,10 @@
                     <canvas id="drawCanvas" width="236" height="110"></canvas>
                 </div>
                 <div style="display:flex; gap:6px;">
-                    <button type="button" onclick="clearDraw()" class="btn-secondary" style="margin:0; flex:1; padding:7px;">
+                    <button type="button" id="btnClearDraw" class="btn-secondary" style="margin:0; flex:1; padding:7px;">
                         Limpiar
                     </button>
-                    <button type="button" onclick="useDrawing()" class="btn-primary" style="margin:0; flex:1; padding:7px; background:#22c55e; color:#fff;">
+                    <button type="button" id="btnUseDrawing" class="btn-primary" style="margin:0; flex:1; padding:7px; background:#22c55e; color:#fff;">
                         Usar firma
                     </button>
                 </div>
@@ -122,7 +122,7 @@
         <div style="flex:1;"></div>
 
         <div class="sidebar-footer">
-            <button type="button" id="submitBtn" onclick="submitSignedPDF()" disabled class="btn-primary">
+            <button type="button" id="submitBtn" disabled class="btn-primary">
                 Firmar y descargar PDF
             </button>
         </div>
@@ -376,6 +376,33 @@
 
         initCanvas();
         initDrawCanvas();
+
+        document.getElementById('btnSelectPdf').addEventListener('click', function() {
+            document.getElementById('pdfInput').click();
+        });
+
+        document.getElementById('pagePrev').addEventListener('click', function() {
+            changePageNum(-1);
+        });
+
+        document.getElementById('pageNext').addEventListener('click', function() {
+            changePageNum(1);
+        });
+
+        document.getElementById('btnClearDraw').addEventListener('click', clearDraw);
+        document.getElementById('btnUseDrawing').addEventListener('click', useDrawing);
+        document.getElementById('submitBtn').addEventListener('click', submitSignedPDF);
+
+        // switchTab se reasigna a window mas abajo en este mismo script, asi que se
+        // resuelve en el momento del clic (igual que hacia el onclick inline).
+        // Referenciarlo directamente aqui capturaria la version muerta.
+        document.getElementById('tabUpload').addEventListener('click', function() {
+            window.switchTab('upload');
+        });
+
+        document.getElementById('tabDraw').addEventListener('click', function() {
+            window.switchTab('draw');
+        });
 
         function changePageNum(delta) {
             const input = document.getElementById('pageNum');
