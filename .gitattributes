@@ -1,0 +1,5 @@
+# Los ficheros de static/js/vendor/ son copias byte a byte de las releases
+# publicadas en los CDN de origen. Se marcan como binarios para que git no
+# aplique conversión de fin de línea y el contenido siga siendo verificable
+# contra el hash de la release original.
+static/js/vendor/* -text -diff
