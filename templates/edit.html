@@ -5,7 +5,7 @@
 {% block body_attrs %} style="margin:0; display:flex; height:100vh; overflow:hidden;"{% endblock %}
 
 {% block extra_head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="/static/js/vendor/fabric-5.3.1.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
 
@@ -529,14 +529,14 @@
         <div class="sidebar-section">
             <span class="section-label">Archivo</span>
             <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
-            <button class="file-name-display" onclick="document.getElementById('pdfInput').click()">
+            <button class="file-name-display" id="btnSelectPdf" type="button">
                 Seleccionar archivo PDF...
             </button>
             <div class="page-control">
-                <button class="page-nav-btn" onclick="switchPage(parseInt(pageNum.value) - 1)">‹</button>
+                <button class="page-nav-btn" id="pagePrev">‹</button>
                 <input type="number" id="pageNum" value="1" min="1" class="page-num-input">
                 <span class="page-total-label" id="pageCountDisplay" style="display:none;">de <span id="totalPages">1</span></span>
-                <button class="page-nav-btn" onclick="switchPage(parseInt(pageNum.value) + 1)">›</button>
+                <button class="page-nav-btn" id="pageNext">›</button>
             </div>
         </div>
 
@@ -545,41 +545,41 @@
             <span class="section-label">Herramientas</span>
             <div class="tools-grid">
                 <span class="tool-group-label">Texto</span>
-                <button type="button" id="toolText" onclick="selectTool('text')" class="tool-btn tool-active">
+                <button type="button" id="toolText" data-tool="text" class="tool-btn tool-active">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
                     <span class="tool-btn-label">Texto</span>
                 </button>
-                <button type="button" id="toolSelect" onclick="selectTool('select')" class="tool-btn">
+                <button type="button" id="toolSelect" data-tool="select" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 1-3 7z"/></svg>
                     <span class="tool-btn-label">Mover</span>
                 </button>
-                <button type="button" id="toolHighlight" onclick="selectTool('highlight')" class="tool-btn">
+                <button type="button" id="toolHighlight" data-tool="highlight" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="1"/></svg>
                     <span class="tool-btn-label">Resaltar</span>
                 </button>
                 <span class="tool-group-label">Figuras</span>
-                <button type="button" id="toolRect" onclick="selectTool('rect')" class="tool-btn">
+                <button type="button" id="toolRect" data-tool="rect" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
                     <span class="tool-btn-label">Rect</span>
                 </button>
-                <button type="button" id="toolCircle" onclick="selectTool('circle')" class="tool-btn">
+                <button type="button" id="toolCircle" data-tool="circle" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
                     <span class="tool-btn-label">Círculo</span>
                 </button>
-                <button type="button" id="toolTriangle" onclick="selectTool('triangle')" class="tool-btn">
+                <button type="button" id="toolTriangle" data-tool="triangle" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4L3 20h18L12 4z"/></svg>
                     <span class="tool-btn-label">Triángulo</span>
                 </button>
-                <button type="button" id="toolArrow" onclick="selectTool('arrow')" class="tool-btn">
+                <button type="button" id="toolArrow" data-tool="arrow" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                     <span class="tool-btn-label">Flecha</span>
                 </button>
-                <button type="button" id="toolLine" onclick="selectTool('line')" class="tool-btn">
+                <button type="button" id="toolLine" data-tool="line" class="tool-btn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"/></svg>
                     <span class="tool-btn-label">Línea</span>
                 </button>
                 <div></div>
-                <button type="button" onclick="deleteSelected()" class="tool-btn tool-btn-delete">
+                <button type="button" id="btnDeleteSelected" class="tool-btn tool-btn-delete">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                     <span class="tool-btn-label">Eliminar seleccionado</span>
                 </button>
@@ -593,12 +593,12 @@
             <input type="number" id="fontSize" value="12" min="6" max="72" class="prop-input">
             <label class="prop-label">Color de texto</label>
             <div class="color-row">
-                <div class="color-swatch active" style="background:#000000;" onclick="setTextColor('#000000', this)"></div>
-                <div class="color-swatch" style="background:#f5c518;" onclick="setTextColor('#f5c518', this)"></div>
-                <div class="color-swatch" style="background:#ef4444;" onclick="setTextColor('#ef4444', this)"></div>
-                <div class="color-swatch" style="background:#3b82f6;" onclick="setTextColor('#3b82f6', this)"></div>
-                <div class="color-swatch" style="background:#22c55e;" onclick="setTextColor('#22c55e', this)"></div>
-                <div class="color-swatch" style="background:#ffffff; border-color: rgba(255,255,255,0.3);" onclick="setTextColor('#ffffff', this)"></div>
+                <div class="color-swatch active" style="background:#000000;" data-action="text-color" data-color="#000000"></div>
+                <div class="color-swatch" style="background:#f5c518;" data-action="text-color" data-color="#f5c518"></div>
+                <div class="color-swatch" style="background:#ef4444;" data-action="text-color" data-color="#ef4444"></div>
+                <div class="color-swatch" style="background:#3b82f6;" data-action="text-color" data-color="#3b82f6"></div>
+                <div class="color-swatch" style="background:#22c55e;" data-action="text-color" data-color="#22c55e"></div>
+                <div class="color-swatch" style="background:#ffffff; border-color: rgba(255,255,255,0.3);" data-action="text-color" data-color="#ffffff"></div>
                 <div class="color-picker-wrap" title="Color personalizado">
                     <input type="color" id="textColor" value="#000000">
                     <span class="color-picker-icon">+</span>
@@ -611,14 +611,14 @@
             <span class="section-label" style="color:rgba(245,197,24,0.45);">Figura</span>
             <label class="prop-label">Color de relleno</label>
             <div class="color-row">
-                <div class="color-swatch" style="background:transparent; border-color:rgba(255,255,255,0.2); position:relative;" onclick="setShapeFill('transparent', this)" title="Sin relleno">
+                <div class="color-swatch" style="background:transparent; border-color:rgba(255,255,255,0.2); position:relative;" data-action="shape-fill" data-color="transparent" title="Sin relleno">
                     <span style="position:absolute; font-size:9px; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.3); pointer-events:none;">∅</span>
                 </div>
-                <div class="color-swatch active" style="background:#3b82f6;" onclick="setShapeFill('#3b82f6', this)"></div>
-                <div class="color-swatch" style="background:#f5c518;" onclick="setShapeFill('#f5c518', this)"></div>
-                <div class="color-swatch" style="background:#ef4444;" onclick="setShapeFill('#ef4444', this)"></div>
-                <div class="color-swatch" style="background:#22c55e;" onclick="setShapeFill('#22c55e', this)"></div>
-                <div class="color-swatch" style="background:#a855f7;" onclick="setShapeFill('#a855f7', this)"></div>
+                <div class="color-swatch active" style="background:#3b82f6;" data-action="shape-fill" data-color="#3b82f6"></div>
+                <div class="color-swatch" style="background:#f5c518;" data-action="shape-fill" data-color="#f5c518"></div>
+                <div class="color-swatch" style="background:#ef4444;" data-action="shape-fill" data-color="#ef4444"></div>
+                <div class="color-swatch" style="background:#22c55e;" data-action="shape-fill" data-color="#22c55e"></div>
+                <div class="color-swatch" style="background:#a855f7;" data-action="shape-fill" data-color="#a855f7"></div>
                 <div class="color-picker-wrap" title="Color personalizado">
                     <input type="color" id="shapeColor" value="#3b82f6">
                     <span class="color-picker-icon">+</span>
@@ -626,11 +626,11 @@
             </div>
             <label class="prop-label">Color de borde</label>
             <div class="color-row">
-                <div class="color-swatch active" style="background:#3b82f6;" onclick="setShapeStroke('#3b82f6', this)"></div>
-                <div class="color-swatch" style="background:#f5c518;" onclick="setShapeStroke('#f5c518', this)"></div>
-                <div class="color-swatch" style="background:#ef4444;" onclick="setShapeStroke('#ef4444', this)"></div>
-                <div class="color-swatch" style="background:#1a2332;" onclick="setShapeStroke('#1a2332', this)"></div>
-                <div class="color-swatch" style="background:#ffffff; border-color:rgba(255,255,255,0.3);" onclick="setShapeStroke('#ffffff', this)"></div>
+                <div class="color-swatch active" style="background:#3b82f6;" data-action="shape-stroke" data-color="#3b82f6"></div>
+                <div class="color-swatch" style="background:#f5c518;" data-action="shape-stroke" data-color="#f5c518"></div>
+                <div class="color-swatch" style="background:#ef4444;" data-action="shape-stroke" data-color="#ef4444"></div>
+                <div class="color-swatch" style="background:#1a2332;" data-action="shape-stroke" data-color="#1a2332"></div>
+                <div class="color-swatch" style="background:#ffffff; border-color:rgba(255,255,255,0.3);" data-action="shape-stroke" data-color="#ffffff"></div>
                 <div class="color-picker-wrap" title="Color personalizado">
                     <input type="color" id="strokeColor" value="#3b82f6">
                     <span class="color-picker-icon">+</span>
@@ -658,7 +658,7 @@
 
         <!-- Footer -->
         <div class="sidebar-footer">
-            <button type="button" id="saveBtn" onclick="saveChanges()" disabled class="save-btn">
+            <button type="button" id="saveBtn" disabled class="save-btn">
                 Guardar y descargar PDF
             </button>
             <div id="downloadArea" style="display:none; margin-top:10px;">
@@ -1195,9 +1195,8 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'float-right text-red-500 hover:text-red-700';
                     deleteBtn.innerHTML = '×';
-                    deleteBtn.onclick = function() {
-                        deleteAnnotation(page, idx);
-                    };
+                    deleteBtn.dataset.page = page;
+                    deleteBtn.dataset.idx = idx;
                     
                     item.appendChild(pageBadge);
                     item.appendChild(textPreview);
@@ -1322,6 +1321,47 @@
         });
 
         initCanvas();
+
+        document.getElementById('btnSelectPdf').addEventListener('click', function() {
+            document.getElementById('pdfInput').click();
+        });
+
+        document.getElementById('pagePrev').addEventListener('click', function() {
+            switchPage(parseInt(pageNum.value) - 1);
+        });
+
+        document.getElementById('pageNext').addEventListener('click', function() {
+            switchPage(parseInt(pageNum.value) + 1);
+        });
+
+        document.querySelector('.tools-grid').addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-tool]');
+            if (btn) selectTool(btn.dataset.tool);
+        });
+
+        document.getElementById('btnDeleteSelected').addEventListener('click', deleteSelected);
+
+        document.getElementById('saveBtn').addEventListener('click', saveChanges);
+
+        // Los 17 swatches se reparten en tres filas (texto, relleno, borde) que
+        // comparten la misma mecánica: aplicar un color. Un único listener
+        // delegado sobre el sidebar despacha por data-action en lugar de
+        // registrar un listener por swatch.
+        document.getElementById('sidebar').addEventListener('click', function(e) {
+            const sw = e.target.closest('.color-swatch');
+            if (!sw) return;
+            const color = sw.dataset.color;
+            switch (sw.dataset.action) {
+                case 'text-color':    setTextColor(color, sw); break;
+                case 'shape-fill':    setShapeFill(color, sw); break;
+                case 'shape-stroke':  setShapeStroke(color, sw); break;
+            }
+        });
+
+        annotationList.addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-page]');
+            if (btn) deleteAnnotation(btn.dataset.page, parseInt(btn.dataset.idx, 10));
+        });
 
         document.getElementById('strokeWidth').addEventListener('change', function() {
             shapeStrokeWidth = parseInt(this.value) || 2;
