@@ -4,11 +4,11 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="/static/js/vendor/sortable-1.15.0.min.js"></script>
+    <script src="/static/js/vendor/pdf-lib-1.17.1.min.js"></script>
     <script type="module" nonce="{{ csp_nonce() }}">
-        import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+        import * as pdfjsLib from '/static/js/vendor/pdf-4.2.67.min.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/js/vendor/pdf-4.2.67.worker.min.mjs';
         window.pdfjsLib = pdfjsLib;
     </script>
     <style>
@@ -130,13 +130,13 @@
         <div class="sidebar-section">
             <span class="section-label">Agregar archivos</span>
             <input type="file" id="pdf_files_unir" accept=".pdf" multiple style="display:none;">
-            <div class="file-upload-zone" onclick="document.getElementById('pdf_files_unir').click()">
+            <div class="file-upload-zone" id="btnSelectPdf">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
                 <p><strong id="unir_filename">Seleccionar PDFs</strong></p>
             </div>
-            <button type="button" onclick="document.getElementById('pdf_files_unir').click()" class="btn-secondary" style="margin-top:8px; margin-bottom:0;">
+            <button type="button" id="btnAddMorePdf" class="btn-secondary" style="margin-top:8px; margin-bottom:0;">
                 + Agregar más PDFs
             </button>
         </div>
@@ -231,7 +231,7 @@
                         <span class="file-item-name" title="${file.name}">${file.name}</span>
                         <span class="file-item-size">${formatFileSize(file.size)}</span>
                     </div>
-                    <button type="button" onclick="removeFile('${file.id}')" class="file-item-remove">×</button>
+                    <button type="button" data-file-id="${file.id}" class="file-item-remove">×</button>
                 </div>
             `).join('');
 
@@ -311,6 +311,20 @@
                 }
             }
         }
+
+        function abrirSelectorPdf() {
+            document.getElementById('pdf_files_unir').click();
+        }
+
+        document.getElementById('btnSelectPdf').addEventListener('click', abrirSelectorPdf);
+        document.getElementById('btnAddMorePdf').addEventListener('click', abrirSelectorPdf);
+
+        // updateFilesList() reconstruye filesList.innerHTML en cada llamada, asi
+        // que los botones de eliminar no sobreviven: se delega en el contenedor.
+        filesList.addEventListener('click', function(e) {
+            const btn = e.target.closest('.file-item-remove');
+            if (btn) removeFile(btn.dataset.fileId);
+        });
 
         pdfFilesInput.addEventListener('change', function() {
             if (!this.files || this.files.length === 0) return;
