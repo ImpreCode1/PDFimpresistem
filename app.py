@@ -56,12 +56,28 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
 
 # Talisman: políticas de seguridad por headers (CSP incluido). Los scripts
-# inline de las plantillas usan nonce ({{ csp_nonce() }}); los estilos inline
-# requieren 'unsafe-inline' en style-src para no romper la UI.
+# inline de las plantillas usan nonce ({{ csp_nonce() }}) y las librerías JS
+# se sirven desde /static/js/vendor/, así que script-src queda en 'self'.
+#
+# 'script-src-attr': 'none' prohíbe explícitamente los atributos de evento
+# inline (onclick, onchange...). Ninguna plantilla los usa ya; la directiva
+# existe para que reintroducir uno falle de forma ruidosa en lugar de depender
+# solo de la ausencia de 'unsafe-inline' en script-src.
+#
+# 'worker-src': pdf.js lanza un Web Worker (ver unir.html). Sin esta directiva
+# la resolución cae en script-src, así que al quitar los CDN del allowlist el
+# worker dejaría de cargar y las miniaturas se renderizarían en blanco: el
+# fallo se traga un catch y no se ve como error.
+#
+# style-src mantiene 'unsafe-inline': lo autorizan los bloques <style> de las
+# plantillas y los atributos style="" (252 de ellos solo en index.html). Es
+# independiente de script-src y no habilita ejecución de JS.
 csp = {
     'default-src': "'self'",
     'img-src': ["'self'", 'data:', 'https:'],
-    'script-src': ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'],
+    'script-src': ["'self'"],
+    'script-src-attr': ["'none'"],
+    'worker-src': ["'self'", 'blob:'],
     'style-src': ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'fonts.googleapis.com'],
     'font-src': ['fonts.gstatic.com'],
 }
