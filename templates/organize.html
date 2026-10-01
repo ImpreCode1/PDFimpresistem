@@ -103,7 +103,7 @@
         <div class="sidebar-section">
             <span class="section-label">Archivo PDF</span>
             <input type="file" id="pdfInput" accept=".pdf" style="display:none;">
-            <div class="file-upload-zone" onclick="document.getElementById('pdfInput').click()">
+            <div class="file-upload-zone" id="btnSelectPdf">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
@@ -140,10 +140,10 @@
         <div style="flex:1;"></div>
 
         <div class="sidebar-footer">
-            <button type="button" id="deleteBtn" onclick="deletePages()" disabled class="btn-danger">
+            <button type="button" id="deleteBtn" disabled class="btn-danger">
                 Eliminar páginas seleccionadas
             </button>
-            <button type="button" id="clearBtn" onclick="clearSelection()" disabled class="btn-secondary">
+            <button type="button" id="clearBtn" disabled class="btn-secondary">
                 Deseleccionar todo
             </button>
             <div id="downloadArea" style="display:none;" class="download-area">
@@ -189,6 +189,13 @@
         
         let thumbnails = [];
         let selectedPages = new Set();
+
+        document.getElementById('btnSelectPdf').addEventListener('click', function() {
+            document.getElementById('pdfInput').click();
+        });
+
+        deleteBtn.addEventListener('click', deletePages);
+        clearBtn.addEventListener('click', clearSelection);
 
         pdfInput.addEventListener('change', async function() {
             if (!this.files[0]) return;
