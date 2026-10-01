@@ -4,7 +4,7 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="/static/css/impresistem-ui.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="/static/js/vendor/fabric-5.3.1.min.js"></script>
     <style>
         body {
             display: flex;
@@ -308,13 +308,11 @@
                         {% if campo.tipo == 2 %}
                         <input type="checkbox" name="{{ campo.nombre }}"
                             {% if campo.valor_actual %}checked{% endif %}
-                            class="field-checkbox"
-                            onchange="highlightFieldByName('{{ campo.nombre }}')">
+                            class="field-checkbox">
                         {% else %}
                         <input type="text" name="{{ campo.nombre }}"
                             value="{{ campo.valor_actual }}"
-                            class="field-input"
-                            onfocus="highlightFieldByName('{{ campo.nombre }}')">
+                            class="field-input">
                         {% endif %}
 
                         {% if campo.rect %}
@@ -492,6 +490,24 @@
             const page = parseInt(this.value);
             if (page >= 1) {
                 loadPage(page);
+            }
+        });
+
+        // Los campos del formulario se generan en un bucle Jinja, asi que se
+        // delega en #formFields en lugar de registrar un listener por campo. El
+        // nombre del campo ya viaja en name, no hace falta un data-* nuevo.
+        // focus no burbujea, por eso se escucha focusin y no focus.
+        const formFields = document.getElementById('formFields');
+
+        formFields.addEventListener('change', function(e) {
+            if (e.target.classList.contains('field-checkbox')) {
+                highlightFieldByName(e.target.name);
+            }
+        });
+
+        formFields.addEventListener('focusin', function(e) {
+            if (e.target.classList.contains('field-input')) {
+                highlightFieldByName(e.target.name);
             }
         });
 
