@@ -516,7 +516,9 @@ def repair_pdf():
         for page in doc:
             _ = page.get_text()
 
-        doc.save(output_path, garbage=4, deflate=True, clean=True, linear=True)
+        doc.save(output_path, garbage=4, deflate=True, clean=True)
+        # Nota: antes se usaba linear=True (fast web view), pero MuPDF 1.27
+        # eliminó la linealización y lanza "Linearisation is no longer supported"
         doc.close()
 
     except Exception as e:

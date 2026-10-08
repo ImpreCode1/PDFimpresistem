@@ -6,6 +6,7 @@ from utils import parsear_paginas
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 import fitz
+import math
 import os
 
 basic_bp = Blueprint('basic', __name__)
@@ -167,13 +168,22 @@ def watermark_pdf():
             centro_x = ancho / 2
             centro_y = alto / 2
 
-            page.insert_text(
-                fitz.Point(centro_x - 150, centro_y),
-                texto,
-                fontsize=60,
-                color=(0.6, 0.6, 0.6),   # gris en formato RGB normalizado
-                rotate=45,                 # diagonal
-                fill_opacity=0.3           # 30% de opacidad — semitransparente
+            # TextWriter + morph dibuja el texto rotado 45° con opacidad.
+            # insert_text() no sirve aquí: solo acepta rotate múltiplo de 90
+            # (PyMuPDF >= 1.26 lanza "bad rotate value" con 45).
+            posicion = fitz.Point(centro_x - 150, centro_y)
+            angulo = math.radians(45)
+            matriz = fitz.Matrix(
+                math.cos(angulo), math.sin(angulo),
+                -math.sin(angulo), math.cos(angulo), 0, 0
+            )
+            escritor = fitz.TextWriter(page.rect)
+            escritor.append(posicion, texto, fontsize=60)
+            escritor.write_text(
+                page,
+                color=(0.6, 0.6, 0.6),      # gris en formato RGB normalizado
+                opacity=0.3,                # 30% de opacidad — semitransparente
+                morph=(posicion, matriz)    # rota 45° alrededor del punto
             )
 
         doc.save(output_path)
@@ -232,9 +242,9 @@ def protect_pdf():
         doc = fitz.open(pdf_path)
         doc.save(
             output_path,
-            user_pwd=password,                    # contraseña para abrir
-            owner_pwd=password + "_owner",         # contraseña de permisos (oculta al usuario)
-            encryption=fitz.PDF_ENCRYPT_AES_256   # estándar de encriptación actual
+            user_pw=password,                    # contraseña para abrir
+            owner_pw=password + "_owner",        # contraseña de permisos (oculta al usuario)
+            encryption=fitz.PDF_ENCRYPT_AES_256  # estándar de encriptación actual
         )
         doc.close()
 
@@ -293,7 +303,7 @@ def unlock_pdf():
             doc.close()
             return 'Contraseña incorrecta.', 400
 
-        # Guardar sin user_pwd ni owner_pwd elimina la protección
+        # Guardar sin user_pw ni owner_pw elimina la protección
         doc.save(output_path)
         doc.close()
 
