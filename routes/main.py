@@ -8,6 +8,9 @@ from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from werkzeug.utils import secure_filename
 import fitz
 from pdf2docx import Converter
+# Parche: conserva las imágenes que pdf2docx 0.5.12 descarta al repartir una
+# foto entre varias celdas de una tabla. Debe importarse antes de convertir.
+import pdf2docx_compat  # noqa: F401
 from pptx import Presentation
 from pptx.util import Inches
 import os
