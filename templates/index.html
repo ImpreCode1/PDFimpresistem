@@ -154,6 +154,12 @@
                         </div>
                         <button type="submit" class="btn-accent">PDF → PowerPoint</button>
                     </form>
+                    {% if output_file %}
+                    <div style="text-align:center; margin-top:8px;">
+                        <h4 style="font-size:14px; font-weight:600; color:var(--color-text); margin-bottom:4px;">Conversión completada</h4>
+                        <a href="{{ output_file }}" download class="text-blue-600 hover:underline" style="font-size:14px;">Descargar presentación PowerPoint</a>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Convertir a Word -->

@@ -379,6 +379,8 @@ def pdf_to_pptx():
     if file.filename == '' or not file.filename.endswith('.pdf'):
         return 'Por favor, suba un archivo PDF.', 400
 
+    logging.info('[pdf_to_pptx] Petición recibida: %s', file.filename)
+
     nombre_base = os.path.splitext(file.filename)[0]
     nombre_limpio = re.sub(r'[^\w\-.]', '_', nombre_base)
     pdf_filename = secure_filename(nombre_limpio + '.pdf')
@@ -404,6 +406,9 @@ def pdf_to_pptx():
             return (f'El PDF tiene {total} páginas. El límite para PowerPoint '
                     f'es {_MAX_PAGINAS_RENDER} páginas.'), 400
 
+        logging.info('[pdf_to_pptx] %s | %d páginas | renderizando a 150 DPI',
+                     output_filename, doc.page_count)
+
         prs = Presentation()
         # Tamaño carta (8.5x11 pulgadas) en formato 16:9 horizontal
         prs.slide_width = Inches(13.333)
@@ -428,8 +433,10 @@ def pdf_to_pptx():
 
         doc.close()
         prs.save(output_path)
+        logging.info('[pdf_to_pptx] Terminado: %s', output_filename)
 
     except Exception as e:
+        logging.exception('[pdf_to_pptx] Error convirtiendo %s', output_filename)
         return f'Error al convertir el archivo: {str(e)}', 500
 
     # Limpiar Mark of the Web del archivo generado (no-op en Linux/Docker)
