@@ -14,6 +14,11 @@ import os
 
 intermediate_bp = Blueprint('intermediate', __name__)
 
+# Tope de páginas para las conversiones que renderizan cada página a imagen
+# (PDF -> JPG). A 300 DPI un PDF de muchas páginas tarda minutos y el
+# navegador acaba cortando la conexión ("se queda cargando").
+_MAX_PAGINAS_IMAGENES = 100
+
 
 @intermediate_bp.route('/reorder', methods=['POST'])
 @login_required
@@ -395,6 +400,16 @@ def pdf_to_jpg():
 
     try:
         doc = fitz.open(pdf_path)
+
+        # Renderizar a imagen es lo más costoso: se limita el número de
+        # páginas para no dejar la petición colgada hasta que el navegador
+        # la corte.
+        if doc.page_count > _MAX_PAGINAS_IMAGENES:
+            total = doc.page_count
+            doc.close()
+            return (f'El PDF tiene {total} páginas. El límite para convertir a '
+                    f'imágenes es {_MAX_PAGINAS_IMAGENES} páginas.'), 400
+
         buffer = io.BytesIO()  # ZIP en memoria — no toca el disco
 
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:

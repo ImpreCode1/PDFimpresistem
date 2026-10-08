@@ -1,8 +1,10 @@
 # app.py — slim version after refactor
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import os
+import tempfile
 from datetime import timedelta
+import fitz
 from config import UPLOAD_FOLDER, OUTPUT_FOLDER
 from utils import limpiar_archivos_programada
 from routes.main import main_bp
@@ -16,6 +18,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
+from flask_wtf.csrf import CSRFError
 import pytz
 import atexit
 
@@ -46,14 +49,32 @@ if not _jwt_secret:
     )
 
 # SESSION_COOKIE_SECURE se desactiva (False) para permitir la app por HTTP.
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
+# La sesión dura 8 h (una jornada). Antes eran 15 minutos: si el usuario
+# tardaba en rellenar un formulario, el POST llegaba sin sesión y fallaba
+# con "CSRF session token is missing" (o un 401 silencioso en /api, que el
+# usuario percibía como que la herramienta "no hacía nada"). Con
+# SESSION_REFRESH_EACH_REQUEST la cookie se renueva en cada petición, así
+# que la sesión solo expira por inactividad real.
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30 MB
 app.config['SESSION_COOKIE_NAME'] = 'pdf_session'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_DOMAIN'] = False  # Allow cookies for current domain
+
+# MuPDF registra un error por objeto cuando un PDF tiene el "structure tree"
+# corrupto (p. ej. "No common ancestor in structure tree"). pdf2docx y las
+# vistas previas lo disparan en PDFs mal formados y llegan a inundar el
+# error.log de Apache (cientos de líneas por documento). No afecta al
+# resultado, así que se silencia para no perder de vista los errores reales.
+try:
+    fitz.TOOLS.mupdf_display_errors(False)
+    fitz.TOOLS.mupdf_display_warnings(False)
+except Exception:
+    pass
 
 # Talisman: políticas de seguridad por headers (CSP incluido). Los scripts
 # inline de las plantillas usan nonce ({{ csp_nonce() }}) y las librerías JS
@@ -129,15 +150,59 @@ def archivo_demasiado_grande(e):
     """
     return 'El archivo supera el límite de 30 MB. Por favor sube un archivo más pequeño.', 413
 
-# Scheduler (unchanged)
-zona_colombia = pytz.timezone('America/Bogota')
-scheduler = BackgroundScheduler(timezone=zona_colombia)
-scheduler.add_job(
-    limpiar_archivos_programada,
-    CronTrigger(hour=19, minute=0, timezone=zona_colombia)
-)
-scheduler.start()
-atexit.register(lambda: scheduler.shutdown(wait=False))
+
+@app.errorhandler(CSRFError)
+def manejar_csrf_error(e):
+    """Da un mensaje claro cuando falta o caducó el token CSRF.
+
+    Antes, un POST con la sesión caducada mostraba la página de error por
+    defecto (o fallaba en silencio en /api) y el usuario lo interpretaba
+    como "la herramienta no hace nada". Ahora /api responde JSON 400 y el
+    resto muestra una página legible que invita a recargar.
+
+    Args:
+        e (CSRFError): Excepción de Flask-WTF.
+
+    Returns:
+        tuple: JSON 400 para /api, o página HTML 400 para el resto.
+    """
+    if request.path.startswith('/api'):
+        return jsonify({
+            'error': 'Sesión expirada o token de seguridad inválido. '
+                     'Recarga la página y vuelve a intentarlo.'
+        }), 400
+    return (
+        '<h1>Sesión expirada</h1>'
+        '<p>Tu sesión caducó o la página estuvo abierta demasiado tiempo. '
+        'Recarga el navegador o <a href="/">vuelve al inicio</a>.</p>'
+    ), 400
+
+# Scheduler: la limpieza programada de las 19:00 debe ejecutarse UNA sola vez.
+# Con mod_wsgi en varios procesos (WSGIDaemonProcess processes=N), cada proceso
+# importa este módulo y, sin control, arrancaría su propio BackgroundScheduler:
+# la limpieza se ejecutaría N veces (borrados duplicados y errores de carrera).
+# Se usa un candado de fichero (fcntl.flock) para que solo el primer proceso
+# arranque el scheduler; los demás quedan sin él, que es justo lo que queremos.
+scheduler = None
+try:
+    import fcntl
+    _scheduler_lock = open(
+        os.path.join(tempfile.gettempdir(), 'pdfimpresistem_scheduler.lock'), 'w'
+    )
+    fcntl.flock(_scheduler_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    zona_colombia = pytz.timezone('America/Bogota')
+    scheduler = BackgroundScheduler(timezone=zona_colombia)
+    scheduler.add_job(
+        limpiar_archivos_programada,
+        CronTrigger(hour=19, minute=0, timezone=zona_colombia)
+    )
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown(wait=False))
+except (ImportError, OSError):
+    # ImportError: en Windows (dev) no existe fcntl. OSError: otro proceso ya
+    # tiene el candado (lo normal cuando processes>1). En ambos casos este
+    # proceso no arranca el scheduler.
+    pass
 
 application = app  # mod_wsgi
 

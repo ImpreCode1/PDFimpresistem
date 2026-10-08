@@ -37,6 +37,12 @@ _MP_MINIMO_PAGINAS = 30
 # Tope de CPUs por conversión para no saturar el servidor si comparte CPU.
 _MP_MAX_CPUS = 4
 
+# Tope de páginas para las conversiones que renderizan cada página a imagen
+# (PDF -> PPTX). Renderizar es la parte lenta: un PDF escaneado de muchas
+# páginas tarda minutos y el navegador acaba cortando la conexión ("se queda
+# cargando"). Mejor un error claro que una petición colgada.
+_MAX_PAGINAS_RENDER = 100
+
 # Directorio de trabajo estable por proceso para las conversiones MP.
 # Se crea una sola vez (no uno por request): con el 'forkserver' de
 # Python >=3.14 en Linux, los hijos heredan el CWD en el que arrancó el
@@ -263,10 +269,20 @@ def convert():
             return 'El PDF está protegido con contraseña. Desbloquéalo primero.', 400
 
         total_paginas = doc.page_count
+
+        # Un PDF escaneado no tiene capa de texto. pdf2docx no hace OCR, así
+        # que generaría un .docx vacío. Se detecta aquí para avisar en vez de
+        # entregar un documento en blanco.
+        total_palabras = sum(len(page.get_text('words')) for page in doc)
         doc.close()
 
         if total_paginas > 60:
             return f'El PDF tiene {total_paginas} páginas. El límite es 60 páginas.', 400
+
+        if total_palabras == 0:
+            return ('Este PDF parece estar escaneado (solo imágenes, sin capa '
+                    'de texto). La conversión a Word necesita texto; primero '
+                    'habría que aplicarle OCR.'), 400
 
     except Exception as e:
         return f'No se pudo leer el PDF: {str(e)}', 400
@@ -338,7 +354,7 @@ def pdf_to_pptx():
     """
     Convierte un PDF a presentación PowerPoint (.pptx).
 
-    Cada página del PDF se renderiza como imagen PNG a 200 DPI y se inserta
+    Cada página del PDF se renderiza como imagen PNG a 150 DPI y se inserta
     como una diapositiva de tamaño carta en el PPTX generado.
 
     IMPORTANTE: El resultado NO es texto editable. Cada diapositiva es una
@@ -379,6 +395,15 @@ def pdf_to_pptx():
             doc.close()
             return 'El PDF está protegido con contraseña. Desbloquéalo primero.', 400
 
+        # Renderizar cada página a imagen es lo más costoso; se limita el
+        # número de páginas para no dejar la petición colgada hasta que el
+        # navegador la corte.
+        if doc.page_count > _MAX_PAGINAS_RENDER:
+            total = doc.page_count
+            doc.close()
+            return (f'El PDF tiene {total} páginas. El límite para PowerPoint '
+                    f'es {_MAX_PAGINAS_RENDER} páginas.'), 400
+
         prs = Presentation()
         # Tamaño carta (8.5x11 pulgadas) en formato 16:9 horizontal
         prs.slide_width = Inches(13.333)
@@ -386,8 +411,9 @@ def pdf_to_pptx():
         blank_layout = prs.slide_layouts[6]
 
         for page in doc:
-            # Renderizar la página a PNG a 200 DPI en memoria
-            pixmap = page.get_pixmap(dpi=200)
+            # Renderizar la página a PNG a 150 DPI en memoria (200 DPI inflaba
+            # el tiempo y el peso del PPTX sin ganancia apreciable en pantalla).
+            pixmap = page.get_pixmap(dpi=150)
             img_bytes = pixmap.tobytes('png')
             img_io = io.BytesIO(img_bytes)
 

@@ -185,13 +185,25 @@ def thumbnails():
         dpi = int(request.form.get('dpi', 72))
     except ValueError:
         dpi = 72
-    
+
+    # Acotar la resolución: valores altos ralentizan el renderizado y no
+    # aportan nada a una miniatura.
+    dpi = max(30, min(dpi, 150))
+
     pdf_bytes = file.read()
     try:
         doc = fitz.open(stream=pdf_bytes, filetype='pdf')
     except Exception:
         return jsonify({'error': 'No se pudo abrir el PDF'}), 400
-    
+
+    # Evitar listas gigantes de miniaturas (y renders largos) en PDFs enormes.
+    if doc.page_count > 200:
+        total = doc.page_count
+        doc.close()
+        return jsonify({
+            'error': f'El PDF tiene {total} páginas; el máximo para miniaturas es 200.'
+        }), 400
+
     result = []
     for page in doc:
         pixmap = page.get_pixmap(dpi=dpi)

@@ -288,7 +288,8 @@ def pdf_to_excel():
                         ws.append(fila_limpia)
 
         if tablas_encontradas == 0:
-            return 'No se encontraron tablas en el PDF.', 400
+            return ('No se encontraron tablas en el PDF. Si es un documento '
+                    'escaneado (solo imágenes), primero necesitaría OCR.'), 400
 
         wb.save(output_path)
 
