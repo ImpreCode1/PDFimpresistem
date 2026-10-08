@@ -40,5 +40,7 @@ EXPOSE 8000
 ENV FLASK_ENV=production
 
 # 11) Comando por defecto: gunicorn como WSGI (independiente de Apache/mod_wsgi)
-#     --workers 2, timeout 120s por PDFs grandes/conversiones
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+#     --workers 2: sync (un request a la vez por worker; se evitan workers con
+#     threads porque pdf2docx usa multiprocessing (fork) dentro del request).
+#     --timeout 300: PDFs de hasta 60 páginas pueden superar los 120s previos.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "300", "--graceful-timeout", "30", "--access-logfile", "-", "--error-logfile", "-", "app:app"]

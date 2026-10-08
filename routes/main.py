@@ -13,8 +13,40 @@ from pptx.util import Inches
 import os
 import re
 import io
+import logging
+import platform
+import tempfile
+import threading
+import time
 
 main_bp = Blueprint('main', __name__)
+
+# Lock global para rotar el CWD durante conversiones con multiprocesamiento.
+# os.chdir es un ajuste por proceso, no por hilo: sin este lock, dos
+# conversiones concurrentes en el mismo proceso interferirían entre sí.
+_conversion_lock = threading.Lock()
+
+# Umbral de páginas desde el cual se activa el multiprocesamiento de
+# pdf2docx. Por debajo, el arranque del Pool cuesta más que la propia
+# conversión secuencial.
+_MP_MINIMO_PAGINAS = 30
+
+# Tope de CPUs por conversión para no saturar el servidor si comparte CPU.
+_MP_MAX_CPUS = 4
+
+# Directorio de trabajo estable por proceso para las conversiones MP.
+# Se crea una sola vez (no uno por request): con el 'forkserver' de
+# Python >=3.14 en Linux, los hijos heredan el CWD en el que arrancó el
+# servidor de multiprocessing, así que debe ser siempre el mismo.
+_mp_workdir = None
+
+
+def _obtener_workdir_mp():
+    """Devuelve (creándolo una sola vez) el CWD estable para conversiones MP."""
+    global _mp_workdir
+    if _mp_workdir is None or not os.path.isdir(_mp_workdir):
+        _mp_workdir = tempfile.mkdtemp(prefix='pdf2docx_')
+    return _mp_workdir
 
 
 # ─── Ruta para servir el logo ─────────────────────────────────────────────
@@ -191,6 +223,12 @@ def convert():
     """
     Convierte un PDF a formato Word (.docx) usando pdf2docx.
 
+    En Linux, los documentos de 30 páginas o más se convierten con el
+    multiprocesamiento nativo de pdf2docx (análisis de páginas repartido
+    entre hasta 4 núcleos de CPU). En el resto de los casos se usa la
+    conversión secuencial estándar. Cada conversión registra duración
+    y página/página en el log del servidor.
+
     Parámetros del formulario:
         pdf_file (file): Archivo PDF a convertir.
 
@@ -225,21 +263,68 @@ def convert():
         doc.close()
 
         if total_paginas > 60:
-            return f'El PDF tiene {total_paginas} páginas. El límite es 30 páginas.', 400
+            return f'El PDF tiene {total_paginas} páginas. El límite es 60 páginas.', 400
 
     except Exception as e:
         return f'No se pudo leer el PDF: {str(e)}', 400
 
     # Conservar nombre original limpio en el output
     output_filename = nombre_limpio + '.docx'
-    word_path = os.path.join(OUTPUT_FOLDER, output_filename)
+    word_path = os.path.abspath(os.path.join(OUTPUT_FOLDER, output_filename))
 
+    # Rutas absolutas: necesarias porque la conversión con multiprocesamiento
+    # rota el CWD del proceso a una carpeta temporal (ver más abajo).
+    pdf_path = os.path.abspath(pdf_path)
+
+    # Multiprocesamiento: desde 30 páginas y solo en Linux. En Windows
+    # (dev local / mod_wsgi embebido) el 'spawn' de multiprocessing puede
+    # bloquearse dentro de un proceso WSGI, así que ahí se mantiene la
+    # conversión secuencial.
+    usar_multiprocessing = (
+        total_paginas >= _MP_MINIMO_PAGINAS and platform.system() == 'Linux'
+    )
+
+    tamano_mb = os.path.getsize(pdf_path) / (1024 * 1024)
+    logging.info(
+        '[convert] %s | %d páginas | %.2f MB | CPUs=%d | multiprocessing=%s',
+        filename, total_paginas, tamano_mb,
+        os.cpu_count() or 1, usar_multiprocessing
+    )
+
+    t0 = time.perf_counter()
     try:
-        cv = Converter(pdf_path)
-        cv.convert(word_path, start=0, end=None)
-        cv.close()
+        if usar_multiprocessing:
+            # pdf2docx escribe temporales 'pages-N.json' en el CWD actual,
+            # que debe ser escribible por el usuario del servidor (Apache).
+            # Se rota el CWD a un directorio de trabajo estable bajo el lock
+            # para no depender de permisos en /var/www ni ensuciar el proyecto.
+            with _conversion_lock:
+                cwd_previo = os.getcwd()
+                os.chdir(_obtener_workdir_mp())
+                cv = None
+                try:
+                    cv = Converter(pdf_path)
+                    cv.convert(
+                        word_path, start=0, end=None,
+                        multi_processing=True,
+                        cpu_count=min(os.cpu_count() or 1, _MP_MAX_CPUS),
+                    )
+                finally:
+                    if cv is not None:
+                        cv.close()
+                    os.chdir(cwd_previo)
+        else:
+            cv = Converter(pdf_path)
+            cv.convert(word_path, start=0, end=None)
+            cv.close()
     except Exception as e:
         return f'Error al convertir el archivo: {str(e)}', 500
+
+    duracion = time.perf_counter() - t0
+    logging.info(
+        '[convert] Terminado en %.2fs (%.2fs/página): %s',
+        duracion, duracion / max(total_paginas, 1), output_filename
+    )
 
     output_file_url = f'/download/{output_filename}'
     return render_template('index.html', output_file=output_file_url, convirtiendo=False)
