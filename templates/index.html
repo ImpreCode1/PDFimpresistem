@@ -169,7 +169,7 @@
                             <p style="font-size:13px; color:var(--color-muted); margin:4px 0 0;">Convierte tu PDF en un documento Word editable conservando el formato original. Acepta archivos PDF con texto y imágenes. Perfecto para editar contratos y documentos.</p>
                         </div>
                     </div>
-                    <form action="/convert" method="POST" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
+                    <form action="/convert" method="POST" enctype="multipart/form-data" id="formConvertWord" style="display:flex; flex-direction:column; gap:12px;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div style="border: 2px dashed var(--color-border); border-radius: 12px; padding: 16px; text-align: center; transition: border-color 0.2s;">
                             <input type="file" name="pdf_file" id="pdf_file" accept=".pdf" class="hidden" required>
@@ -1277,7 +1277,13 @@
             });
         });
 
-        document.getElementById('btnConvertirWord')?.addEventListener('click', mostrarCargandoWord);
+        // IMPORTANTE: escuchar el evento 'submit' del formulario, NO el
+        // 'click' del botón. Deshabilitar el botón dentro de su propio
+        // handler de click cancela el envío del formulario en Chrome/Edge
+        // (patrón documentado): el usuario ve "Convirtiendo..." para
+        // siempre y el servidor nunca recibe la petición. En 'submit' el
+        // envío ya está comprometido, así que deshabilitar es seguro.
+        document.getElementById('formConvertWord')?.addEventListener('submit', mostrarCargandoWord);
 
         document.getElementById('searchInput')?.addEventListener('input', filtrarHerramientas);
 
