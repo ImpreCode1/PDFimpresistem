@@ -1205,13 +1205,42 @@
                 alert('Por favor, escribe las páginas a separar.');
                 return;
             }
-            selectedPages = selectedPages.split(',').map(page => parseInt(page.trim())) - 1;
-            const invalidPages = selectedPages.filter(page => page < 0 || page >= numPages);
-            if (invalidPages.length > 0) {
-                const invalidPagesHuman = invalidPages.map(page => page + 1);
-                alert(`Las siguientes páginas no existen en este documento: ${invalidPagesHuman.join(', ')}`);
+            // Mismo formato que en el servidor: lista "1,3,5" y rangos "2-4"
+            // (ver utils.obtener_paginas). Se convierte a índices base 0.
+            const indices = new Set();
+            const fueraDeRango = [];
+            const malformadas = [];
+            for (const parte of selectedPages.split(',')) {
+                const item = parte.trim();
+                if (!item) continue;
+                const rango = item.match(/^(\d+)\s*-\s*(\d+)$/);
+                const simple = item.match(/^\d+$/);
+                let desde, hasta;
+                if (rango) {
+                    desde = parseInt(rango[1], 10);
+                    hasta = parseInt(rango[2], 10);
+                    if (desde > hasta) { malformadas.push(item); continue; }
+                } else if (simple) {
+                    desde = hasta = parseInt(item, 10);
+                } else {
+                    malformadas.push(item);
+                    continue;
+                }
+                if (desde < 1 || hasta > numPages) {
+                    fueraDeRango.push(item);
+                    continue;
+                }
+                for (let n = desde; n <= hasta; n++) indices.add(n - 1);
+            }
+            if (malformadas.length > 0) {
+                alert(`Páginas con formato no válido: ${malformadas.join(', ')}. Usa el formato 1,3,5 o rangos como 2-4.`);
                 return;
             }
+            if (fueraDeRango.length > 0) {
+                alert(`Las siguientes páginas no existen en este documento: ${fueraDeRango.join(', ')}`);
+                return;
+            }
+            selectedPages = Array.from(indices).sort((a, b) => a - b);
             await separarPDF(pdfDoc, selectedPages);
         });
 
